@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { fetchAllPrices, PriceMap } from '../services/priceService';
 
 const REFRESH_MS = 60_000;

@@ -6,7 +6,7 @@
  */
 
 // Production'da Vercel env var'dan gelir, dev'de boş kalır (proxy kullanır)
-const API_BASE = import.meta.env.VITE_API_BASE;
+const API_BASE = (import.meta as any).env.VITE_API_BASE;
 
 /**
  * Backend endpoint URL'i oluşturur.
