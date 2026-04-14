@@ -1,0 +1,47 @@
+# ─── Node ─────────────────────────────────────────────────────────────────────
+node_modules/
+dist/
+.vite/
+
+# ─── Python / Backend ─────────────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+.venv/
+venv/
+env/
+*.egg-info/
+.eggs/
+.pytest_cache/
+htmlcov/
+.coverage
+
+# ─── Veritabanı ───────────────────────────────────────────────────────────────
+*.db
+*.sqlite
+*.sqlite3
+
+# ─── Ortam Değişkenleri (GİZLİ — Asla commit'leme!) ──────────────────────────
+.env
+.env.local
+.env.production
+backend/.env
+
+# ─── IDE / Editör ─────────────────────────────────────────────────────────────
+.vscode/settings.json
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# ─── Loglar ───────────────────────────────────────────────────────────────────
+*.log
+npm-debug.log*
+yarn-debug.log*
+
+# ─── Geçici Dosyalar ──────────────────────────────────────────────────────────
+tmp/
+temp/

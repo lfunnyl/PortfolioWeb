@@ -1,0 +1,160 @@
+# ÇÖZÜLECEKLER (TO-DO & LIMITATIONS)
+
+1. Canlı Opsiyon Verileri (Pro Sekmesi)
+   - Şu anki yapıda opsiyon verileri sadece manuel bir not defteri gibi kaydediliyor.
+   - Çözüm Önerisi: Sunucu (backend) tarafında `yfinance` veya `TD Ameritrade / IBKR` gibi bir API entegrasyonu yapılarak opsiyon koduna (Ticker + Vade + Strike) göre canlı delta/gamma ve prim fiyatı çekilebilir. Ön yüz üzerinden bu verilerin doğrudan alınması CORS sorunlarına veya ücretsiz borsa API sınırlarına takılır.
+
+2. Tam Özellikli Veritabanı ve Senkronizasyon (Cloud Sync)
+   - Uygulama şu anda tamamen kullanıcının tarayıcısında (Local Storage) barınıyor. Çerezler silindiğinde veya başka bir cihaza geçildiğinde veriler gidiyor. Geçici olarak "İçe/Dışa Aktar (Yedekle/Yükle)" özelliği eklendi.
+   - Çözüm Önerisi: Sistemin bir PostgreSQL veya Firebase Firestore veritabanına bağlanması. Kullanıcılar için login (Auth) sistemi getirilip portföylerinin buluta eşitlenmesi gerekir.
+
+3. Finansal Haberler Bölümü Limitleri
+   - `Marketaux API` kullanıldığı için günde en fazla ~100 istek limiti var. Sürekli sayfayı yenileyen kullanıcılar limite çok çabuk ulaşacaktır veya haberler güncellenmeyecektir.
+   - Çözüm Önerisi: Ücretli bir haber API servisine geçiş yapmak veya RSS feed'lerini aracı bir webhook (AWS Lambda vs.) ile saat başı çekip sunucuda önbelleğe (Cache) almak.
+
+4. BIST ve Yurtdışı Hisselerde "Geçmiş Fiyat" Kusurları
+   - Yahoo Finance API'ı "proxy"ler vasıtasıyla çekildiği için anlık ağ gecikmelerinden veya allorigins.win limitlerinden dolayı zaman zaman fiyat getirmeyebilir.
+   - Çözüm Önerisi: Backend kurularak her günün kapanış fiyatları (EOD data) veritabanına kaydedilmeli veya ücretli finansal borsa veri sağlayıcısı entegre edilmeli.
+
+
+yapılacaklar
+
+1-Temettü ve Faiz İçin DRIP (Bileşik Getiri) Simülatörü **
+Sadece basit bir getiri oranından ziyade, "Temettülerden ve faizden gelen nakit tekrar aynı varlığa 
+yatırılırsa (Dividend Reinvestment Plan) 5, 10, 20 yılda portföy nasıl bir kar topuna dönüşür?"
+hesaplaması ekleyebiliriz.
+
+2-Portföy Korelasyon Matrisi (Risk Ayrıştırma)  * datascience ^2
+Kullanıcının tuttuğu varlıkların birbirleriyle ne kadar birlikte hareket ettiğini (Pearson Correlation) 
+gösterebiliriz. Örneğin; portföydeki 3 hisse birbirine %90 koreleyse, aslında portföy çeşitlendirilmemiştir 
+ve gizli bir risk taşır. Bunu görsel bir ısı haritasına (heat map) dökebiliriz.
+
+3-Makine Öğrenmesi Fiyat Öngörü Sınırları (Prophet / CatBoost) *(yüksek güveni sağlayamayız)
+Geçmiş projelerin finansal modelleme yeteneklerimizi buraya taşıyarak; 
+bir varlığın önümüzdeki 30 gün içinde %95 güven aralığında hangi alt-üst bantlarda kalabileceğini gösteren 
+bir Zaman Serisi Tahmin (Time Series Forecasting) widget'ı koyabiliriz.
+
+4. Akıllı Vergi Hasadı (Tax-Loss Harvesting) Algoritması *****(tutarlı olması çok iyi olur)
+ProView içindeki FIFO Vergi hesabını bir adım üste taşıyarak; "Yıl bitiyor, 10.000 TL vergi ödemen çıkacak. 
+Ancak zararda olan şu X hissesinden satış yaparsan zararı realize edip vergini 0 TL'ye indirebilirsin" gibi yasal 
+strateji önerileri sunan bir motor yapılabilir.
+
+5. Enflasyondan Arındırılmış Gerçek Getiri (Real Return)** (çok kafa karıştırmadan)
+TÜİK (veya ENAG) enflasyon verisini bir kerelik dizi olarak sisteme gömüp, portföy getirisini manşet getiri 
+yerine "Enflasyondan Arındırılmış Reel Getiri" olarak gösterebiliriz. (Örn: "%50 kârdayım sanıyorsun ama reel 
+olarak paran %5 erimiş")
+
+6. Hedef Takip Sistemi (Goal-Based Wealth)****
+Kullanıcıya "Ev Almak - 5.000.000 TL" veya "Emeklilik fonu" gibi bir hedef tanımlatıp, 
+dinamik olarak portföy getiri hızına göre hedefe ne kadar süresi kaldığını, bir ilerleme çubuğu 
+(progress bar) üzerinden oyunlaştırma ile gösterebiliriz.
+
+7. Broker & On-Chain API Cüzdan Okuyucuları **** (tutarlılık gerekli)
+   İşi manuel veri girişinden çıkarıp tamamen otomatize etmek adına; Metamask (Etherscan API), 
+   Solana Cüzdanı veya Salt Okunur (Read-Only) Midas/Binance API entegrasyonları ile varlıkları 
+   tamamen canlı cüzdan akışından (Pipeline) sync edebiliriz.
+
+8. monte carlo seneryo gelişimi * 
+sabit büyüme yerine varlıkların volatilitesine göre değerlerini alıp rastgele 10.000 senaryo
+oynatarak "5 Yıl sonra portföyünün %90 olasılıkla 1 Milyon TL ile 4 Milyon TL arasında olma 
+ihtimali var" gibi stokastik modeller çizebiliriz.
+
+9.RSI ve MACD Göstergeleri ile Al-Sat Sinyalleri **
+   https://claude.ai/share/56f5c82a-589c-4f1d-8cb2-0eeda8626263
+
+
+         DATA SCIENCsEx
+1-Doğal Dil İşleme (NLP) ile Duygu Analizi (FinBERT Sentiment)
+Senin veya aracı kurumun sadece fiyatlara bakması geçmişi anlatır. Ancak geleceği haberler belirler.
+
+Aksiyon: Portföyündeki varlıkların (Örn: THYAO, AAPL, BTC) günlük finansal haberlerini ve Twitter/X 
+akışlarını otomatik çeken arka plan bir bot (Pipeline) kurulur.
+Veri Bilimi: Finansal metinler için özel eğitilmiş FinBERT makine öğrenmesi modeli ile metinler okunur, 
+"Pozitif, Negatif, Nötr" skoru çıkarılır.
+Cüzdan Etkisi: "Portföyünüzün bu haftaki piyasa duygu durumu: %60 Negatif (Ayı). Özellikle Tesla ve Apple 
+hisseleriniz etrafında kötü haber akışı var" gibi bir asistan arayüzü yaratırsın.
+
+2-Nedensel Çıkarım (Causal Inference & Bayesian Networks)
+Makine öğrenmesinde sadece korelasyona bakılır ve bu bazen sahtedir (Spurious Correlation). Gerçek Veri Bilimi "Neden?" (Causal) sorusunu sorar.
+
+Aksiyon: Portföy değerindeki erimenin veya kârın altında yatan asıl matematiksel etkeni bulmak.
+Veri Bilimi: Sadece portföyün yükseldiğini söylemek yerine, Do-Calculus matematiği kullanarak dış etkenleri 
+(FED Faiz oranları, USD/TRY kur şoku, Altın onsu) analiz eden nedensellik grafikleri çıkarılır.
+Çıktı: "Son 3 aydaki 100.000 TL'lik kazancınızın %80'i kur artışından (USD/TRY) kaynaklı, hisse seçimi performansınız aslında reel olarak negatiftir" 
+gibi sarsıcı, aydınlatıcı gerçekler gösterilir.
+
+
+3-Kullanıcı Davranış Analizi (Behavioral Finance ML Profiling)
+Yatırımcıların en büyük düşmanı kendi psikolojileridir.
+
+Aksiyon: Kullanıcının AssetEntry (Alım) ve SaleEntry (Satım) tarihlerini zaman serisindeki (Time Series) o günkü fiyata göre haritalamak.
+Veri Bilimi: K-Means Clustering ve zaman kırılımlı analiz ile kullanıcının FOMO'ya (Fırsatı kaçırma korkusu) katılıp zirvede mi aldığı, 
+yoksa panik yapıp (Loss Aversion) dipte mi sattığı makine tarafından tespit edilir.
+Çıktı: Uygulama sana "Psikoloji Skorunuz" verir: "Sistemimiz, varlıklarınız %10 düştüğünde istatistiksel olarak panik satışı yapma eğiliminde 
+olduğunuzu saptadı. Puanınız düşürüldü."
+
+
+
+------------HABERLER---------------
+1-OLUMLU OLUMSUZ HABERLERİN FİLTELENMESİ
+
+2-HABERLERİN PORTFÖYE ETKİSİ
+Fikir: Makine öğrenmesi modeli geçmiş piyasa verileriyle haberleri eşleştirerek eğitilir (Örn: X haberi çıktığında hisse 24 saat içinde % kaç oynadı?).
+Uygulama: Kullanıcıya haberi verirken sadece 🟢 Pozitif demek yerine; "Piyasa Etki Beklentisi: Yüksek (Volatilite %4+ artabilir)" şeklinde bir tahmin 
+eklersin. Gürültü (önemsiz) haberler filtrelenmiş olur.
+
+
+3- LLM Destekli "Günün Özeti" (Abstractive Summarization) Kullanıcı senin uygulamana girdiğinde favori hisseleriyle ilgili 40 tane haber okumak istemez.
+
+Fikir: Arka planda Gemini veya OpenAI (RAG yapısı üzerinden) ile o gün kullanıcının favori kağıtlarıyla ilgili düşen tüm haberleri okutursun.
+Uygulama: Ekranda tek bir paragraf çıkar: "Bugün THYAO ve AAPL için hareketli bir gün. THYAO'nun yeni uçak siparişi piyasada %80 pozitif 
+algılanırken, Apple'ın Çin'deki satış düşüşü raporları tedirginlik yarattı. Genel Portföy Haber Skoru: Yatay."
+
+4- Duygu ve Fiyat Uyumsuzluğu Tespiti (Sentiment Divergence Signal) İşte Wall Street'in kullandığı asıl sihir burasıdır.
+
+Fikir: Haberlerin "Duygu (Sentiment) Eğrisi" ile hissenin "Fiyat Eğrisi"ni aynı grafikte (korelasyon ile) çizersin.
+Uygulama: AAPL hissesi son 1 haftada tırmanışta (Fiyat artıyor). Ancak arkada NLP algoritman yakalıyor ki; 
+The Wall Street Journal, Bloomberg vb. kaynaklarda AAPL'ın haber duygu skoru (Sentiment) son 3 gündür hızla aşağı (negatife) çakılıyor.
+Sinyal: Sistem kullanıcıya kırmızı bir uyarı yakar: "DİKKAT! AAPL fiyatı yükseliyor ancak makine öğrenmesi algoritmamız haber akışında 
+ciddi bir negatife dönüş (Uyumsuzluk) yakaladı. Beklenmedik bir 'Satış/Düzeltme' an meselesi olabilir."
+
+5-Varlık Çıkarımı (NER - Named Entity Recognition)
+ile Gizli Etkileşimler Haberde sadece hissenin adı geçmeyebilir, tedarikçisinin adı geçebilir.
+Uygulama: Bilgi Grafikleri (Knowledge Graphs) ve NER algoritmaları kullanarak, arz zincirindeki 
+sorunları tespit edip; "Fav varlığınız TSLA doğrudan geçmese de, tedarik zincirindeki Lityum arzında yaşanan bu gelişme 
+TSLA için dolaylı negatif (-%20 etki) taşıyor" diyebilen bir sistem kurarsın.
+
+6-Aspect-Based Sentiment Analysis (Yöne Bağlı Duygu Analizi) Bir haber aynı anda hem pozitif hem negatif olabilir.
+Uygulama: Klasik bir model kafası karışıp "Nötr" der. Aspect-Based NLP algoritması ise haberi parçalar:
+Kârlılık (Financials): 🟢 Çok Pozitif
+Regülasyon (Regulatory): 🔴 Çok Negatif Kullanıcıya haberin neyinin iyi, neyinin kötü olduğunu nokta atışı gösterirsiniz.
+
+================================================================================
+🎯 PROJENİN GENEL YAPISINA GÖRE ÖNEM SIRASINA DİZİLMİŞ GÖREVLER LİSTESİ
+================================================================================
+(Uygulamanın şu anda sadece LocalStorage kullanan bir React/Vite ön yüz projesi olduğu göz önüne alınarak, sürdürülebilirlik ve veri güvenliği açısından altyapı ihtiyaçları ilk sıraya alınmıştır.)
+
+🔴 1. YÜKSEK ÖNCELİKLİ (Kritik Altyapı ve Veri Güvenilirliği)
+--------------------------------------------------------------------------------
+ 1. Tam Özellikli Veritabanı ve Senkronizasyon (Cloud Sync): Kayıp riski en yüksek alan. LocalStorage'dan çıkıp Firebase/PostgreSQL ile Auth + Veritabanı entegrasyonu kurulmalı. Aksi takdirde uygulanan diğer tüm gelişmiş algoritmalar verilerin silinmesiyle boşa gidecektir.
+ 2. BIST/Yurtdışı Fiyat Kusurları ve Opsiyon Verileri: Anlık API ağ gecikmelerine/limitlerine takılmamak adına; Sunucu (backend) yazılarak yfinance vb. ile verilerin (hisse, opsiyon) backend veritabanına cache'lenmesi/kaydedilmesi.
+ 3. Finansal Haberler Bölümü Limitleri: Marketaux API vb. sistemlerin limitasyonlarını çözmek için Webhook / AWS Lambda kurup saatlik önbellekleme (caching) yapısı kurulmalı.
+ 4. Broker & On-Chain API Cüzdan Okuyucuları: Altyapı hazırlanırken manuel işlemlerden kurtulmak okuma (read-only) yetkili Cüzdan (Metamask, Solana, Binance) entegrasyonu.
+
+🟡 2. ORTA ÖNCELİKLİ (Çekirdek Finansal Analiz ve Kullanıcı Deneyimi)
+--------------------------------------------------------------------------------
+ 5. Akıllı Vergi Hasadı (Tax-Loss Harvesting) Algoritması: Mevcut manuel FIFO/BSMV ekranını otomatik vergi sıfırlama (ör: Zarardaki varlıktan satma) rotalarına bağlayan bir yardımcı sistem kurulması.
+ 6. Enflasyondan Arındırılmış Gerçek Getiri (Real Return): TÜİK/ENAG enflasyon değerlerinin gömülüp manşet kârların yanılgısını engelleyecek reel getiri parametresinin entegrasyonu.
+ 7. Temettü ve Faiz İçin DRIP (Bileşik Getiri) Simülatörü: Mevcut DCA simülasyonunu, yatırımların kendilerinden kazanılan temettüyü tekrar aynı varlığa yatıran gerçek DRIP hesaplaması seviyesine taşımak.
+ 8. Hedef Takip Sistemi (Goal-Based Wealth): UX zenginleştirme adımı. Ev, araba vs hedefler için progress bar'lar eklemek. 
+
+🟢 3. İLERİ & UZMAN ÖNCELİK (Data Science / Gelişmiş Makine Öğrenmesi)
+--------------------------------------------------------------------------------
+(Bu adımlar; backend, veritabanı ve temiz veri hatları (pipeline) tamamen sağlama alındıktan sonra hayata geçirilecek prestij modülleridir.)
+ 9. LLM Destekli "Günün Özeti": Gemini veya OpenAI ile karmaşık finansal haberleri okuyup kullanıcı özel tek paragraf özet (Abstractive Summarization) sunulması.
+ 10. Portföy Korelasyon Matrisi ve Duygu Analizi (FinBERT): Heat-map korelasyon tabloları çıkartmak ve NLP ile hisselere/şirketlere duygu etiketleri asmak.
+ 11. Duygu - Fiyat Uyumsuzluğu (Sentiment Divergence Signal): Analiz edilen haberler (Negatif) ile Varlık Eğrisi'nin (Pozitif yükseliş) aynı anda ölçülerek uyumsuzluk uyarıları (Satış Sinyali) çıkartılması.
+ 12. Nedensel Çıkarım (Causal Inference): "Kazancın aslında döviz artışından dolayı oldu" gibi acı istatistikleri ve gerçek matematiksel etkenleri söyleyen Bayesian kurgular.
+ 13. Makine Öğrenmesi Fiyat Öngörü (Prophet / CatBoost) & Monte Carlo Senaryoları.
+ 14. Algoritmik Sinyaller (RSI / MACD) ve Varlık Çıkarımı (NER) ile dolaylı risk bildirimi.
+ 15. Kullanıcı Davranış Analizi (Behavioral ML Profiling): FOMO'da veya kaybetme korkusuyla mı trade işlemleri yapıyor, kullanıcının veri üzerinden psikolojik analizi.

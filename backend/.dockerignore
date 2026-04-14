@@ -1,0 +1,20 @@
+# .dockerignore — Docker build'e dahil edilmeyecek dosyalar
+__pycache__/
+*.py[cod]
+*.pyo
+.venv/
+venv/
+env/
+.env
+*.db
+*.sqlite
+*.sqlite3
+.pytest_cache/
+.coverage
+htmlcov/
+*.egg-info/
+.git/
+.gitignore
+README.md
+DEPLOYMENT.md
+ROADMAP.md
