@@ -8,9 +8,19 @@ from database import engine, Base
 from routers import portfolio, prices, news, auth, connectors
 from core.config import settings
 import os
+import logging
+
+# Loglama ayarla — Railway loglarında görünür
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 # Tabloları veritabanında oluştur
-Base.metadata.create_all(bind=engine)
+try:
+    Base.metadata.create_all(bind=engine)
+    logger.info("✅ Veritabanı tabloları başarıyla oluşturuldu / doğrulandı.")
+except Exception as e:
+    logger.error(f"❌ Veritabanı başlatma hatası: {e}")
+    raise
 
 # ── Rate Limiter ──────────────────────────────────────────────────────────────
 # IP başına dakikada 60 genel istek, auth routerı için daha kısıtlı
