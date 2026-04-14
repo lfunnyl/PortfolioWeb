@@ -14,12 +14,12 @@ const API_BASE = import.meta.env.VITE_API_BASE;
  */
 export function apiUrl(path: string): string {
   const normalizedPath = path.startsWith('/') ? path : `/${path}`;
-  
+
   if (API_BASE) {
     // Production: direkt Railway'e git (örn: https://...railway.app/api/auth/login)
     return `${API_BASE}/api${normalizedPath}`;
   }
-  
+
   // Geliştirme: Vite proxy üzerinden git
   return `/api/backend${normalizedPath}`;
 }
