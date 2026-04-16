@@ -29,56 +29,24 @@ async function fetchCryptoHistorical(def: AssetDefinition, date: Date): Promise<
   }
 }
 
-// 2. Hisse Senetleri (Yahoo Finance - Proxy Üzerinden)
+import { apiUrl } from './apiConfig';
+
+// 2. Hisse Senetleri (Yahoo Finance - Backend Üzerinden)
 async function fetchStockHistorical(def: AssetDefinition, date: Date): Promise<number | null> {
   if (!def.stockKey) return null;
   
-  // Yahoo period formülü (Unix timestamp - saniye saniye)
-  // O günün başlangıcı ve bitişi
-  const startTs = Math.floor(new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime() / 1000);
-  const endTs = startTs + 86400 * 5; // Hafta sonuna denk gelme riskine karşı 5 günlük periyot açalım, ilkini alalım
-
-  const yahooQueryPath = `/v8/finance/chart/${def.stockKey}?period1=${startTs}&period2=${endTs}&interval=1d`;
+  const dateStr = date.toISOString().split('T')[0];
+  const url = apiUrl(`/prices/historical/${encodeURIComponent(def.stockKey)}?date=${dateStr}`);
   
-  // Önce limitsiz yerel Vite proxy'sini test edelim
   try {
-    const res = await fetch(`/api/yahoo` + yahooQueryPath);
-    if (res.ok) {
-      const data = await res.json();
-      const result = data?.chart?.result?.[0];
-      if (result && result.indicators?.quote?.[0]?.close) {
-        const prices = result.indicators.quote[0].close;
-        const validPrice = prices.find((p: number | null) => p !== null && p > 0);
-        if (validPrice) return validPrice;
-      }
-    }
+    const res = await fetch(url, { signal: AbortSignal.timeout(8000) });
+    if (!res.ok) return null;
+    const data = await res.json();
+    return data?.price > 0 ? data.price : null;
   } catch (err) {
-    console.warn("Historical price local proxy failed, falling back to external proxies...");
+    console.warn("Backend historical price fetch failed: ", err);
+    return null;
   }
-
-  // Eğer canlidaysak veya proxy çalışmadıysa harici proxy'ler
-  const yahooUrl = `https://query2.finance.yahoo.com` + yahooQueryPath;
-  const CORS_PROXIES = [
-    (u: string) => `https://api.allorigins.win/raw?url=${encodeURIComponent(u)}`,
-    (u: string) => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(u)}`,
-  ];
-
-  for (const proxy of CORS_PROXIES) {
-    try {
-      const res = await fetch(proxy(yahooUrl), { signal: AbortSignal.timeout(5000) });
-      if (!res.ok) continue;
-      const data = await res.json();
-      const result = data?.chart?.result?.[0];
-      if (result && result.indicators?.quote?.[0]?.close) {
-        const prices = result.indicators.quote[0].close;
-        const validPrice = prices.find((p: number | null) => p !== null && p > 0);
-        if (validPrice) return validPrice;
-      }
-    } catch {
-      continue;
-    }
-  }
-  return null;
 }
 
 // 3. Döviz ve Metal Kuru (Open.ER veya benzeri) (Zorlu)

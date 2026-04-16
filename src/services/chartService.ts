@@ -1,5 +1,6 @@
 import { AssetDefinition } from '../types/asset';
 import { getAssetDefinitions } from './priceService';
+import { apiUrl } from './apiConfig';
 
 export interface ChartDataPoint {
   date: string;
@@ -31,46 +32,18 @@ const CG_DAYS: Record<TimeRange, string> = {
 
 async function fetchYahooChart(def: AssetDefinition, range: TimeRange): Promise<ChartDataPoint[]> {
   if (!def.stockKey) return [];
-  const yahooRange = YAHOO_RANGE[range];
-  // 1A'dan kısaysa saatlik/günlük, uzunsa günlük
-  const interval = (range === '1W' || range === '1M') ? '1d' : '1d'; 
-
-  const yahooUrl = `https://query1.finance.yahoo.com/v8/finance/chart/${def.stockKey}?range=${yahooRange}&interval=${interval}`;
-
-  const proxies = [
-    `/api/yahoo/v8/finance/chart/${def.stockKey}?range=${yahooRange}&interval=${interval}`, 
-    `https://api.allorigins.win/raw?url=${encodeURIComponent(yahooUrl)}`,
-    `https://corsproxy.io/?${encodeURIComponent(yahooUrl)}`,
-    `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(yahooUrl)}`
-  ];
-
-  for (const proxyUrl of proxies) {
-    try {
-      const res = await fetch(proxyUrl, { signal: AbortSignal.timeout(6000) });
-      if (!res.ok) continue;
-      const data = await res.json();
-      const result = data?.chart?.result?.[0];
-      if (!result?.timestamp || !result?.indicators?.quote?.[0]?.close) continue;
-
-      const timestamps: number[] = result.timestamp;
-      const closes: number[] = result.indicators.quote[0].close;
-
-      const points: ChartDataPoint[] = [];
-      for (let i = 0; i < timestamps.length; i++) {
-        if (closes[i] !== null && closes[i] !== undefined) {
-           const d = new Date(timestamps[i] * 1000);
-           points.push({
-             date: d.toISOString().split('T')[0],
-             price: closes[i]
-           });
-        }
-      }
-      if (points.length > 0) return points;
-    } catch {
-      continue;
-    }
+  
+  const url = apiUrl(`/prices/chart/${encodeURIComponent(def.stockKey)}?range=${range}`);
+  
+  try {
+    const res = await fetch(url, { signal: AbortSignal.timeout(6000) });
+    if (!res.ok) return [];
+    const data = await res.json();
+    return data; // already in format {date: string, price: number}[]
+  } catch (err) {
+    console.warn("Backend chart fetch failed: ", err);
+    return [];
   }
-  return [];
 }
 
 async function fetchCoinGeckoChart(def: AssetDefinition, range: TimeRange): Promise<ChartDataPoint[]> {

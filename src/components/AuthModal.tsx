@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { apiUrl } from '../utils/api';
+import { importData } from '../utils/storage';
 
 type AuthView = 'login' | 'register' | 'verify_sent' | 'forgot' | 'forgot_sent';
 
@@ -27,7 +28,26 @@ export function AuthModal({ onClose }: AuthModalProps) {
       if (res.ok) {
         const data = await res.json();
         login(data.access_token, email);
+        
+        // Giriş başarılı olunca hemen portföyü çek
+        try {
+           const syncRes = await fetch(apiUrl('/portfolio/sync'), {
+               headers: { 'Authorization': `Bearer ${data.access_token}` }
+           });
+           if (syncRes.ok) {
+               const syncData = await syncRes.json();
+               const importPayload = {
+                 entries: syncData.entries || [],
+                 sales: syncData.sales || [],
+                 dividends: syncData.dividends || [],
+                 options: syncData.options || []
+               };
+               importData(JSON.stringify(importPayload));
+           }
+        } catch(e) {}
+        
         onClose();
+        window.location.reload(); // Değişikliklerin anında görünmesi için
       } else {
         const err = await res.json();
         // E-posta doğrulanmamış özel hata

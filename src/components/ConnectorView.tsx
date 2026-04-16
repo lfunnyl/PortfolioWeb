@@ -1,6 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { apiUrl } from '../utils/api';
+import { addEntry } from '../utils/storage';
+import { getAssetDefinitions } from '../services/priceService';
+import { AssetEntry } from '../types/asset';
 
 // ──────────────────────────────────────────────────────────────────────────────
 // Types
@@ -367,9 +370,44 @@ export function ConnectorView() {
       {/* ══ Synced Balances ══════════════════════════════════════════════════ */}
       {syncedBalances.length > 0 && (
         <div className="glass-card adv-section">
-          <h3 className="adv-title">📊 Çekilen Bakiyeler</h3>
-          <p className="adv-hint">
-            Bu veriler portföyünüze otomatik yüklenmedi. İnceleyip istediğiniz varlıkları manuel olarak ekleyebilirsiniz.
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <h3 className="adv-title" style={{ marginBottom: 0 }}>📊 Çekilen Bakiyeler</h3>
+            <button
+              className="btn-primary"
+              style={{ fontSize: '0.8rem', padding: '0.4rem 0.9rem' }}
+              onClick={() => {
+                const defs = getAssetDefinitions();
+                let addedCount = 0;
+                
+                syncedBalances.forEach(b => {
+                  if (b.quantity <= 0) return;
+                  // Binance returns 'BTC', we map to 'BTC' crypto or 'XAU' etc.
+                  let match = defs.find(d => d.symbol === b.asset || d.id === b.asset);
+                  if (!match && b.asset === 'ETH') match = defs.find(d => d.id === 'ETH');
+                  
+                  if (match) {
+                     const entry: AssetEntry = {
+                        id: Date.now().toString() + Math.random().toString(36).substr(2, 5),
+                        assetId: match.id,
+                        quantity: b.quantity,
+                        purchasePriceTRY: 0,
+                        purchaseDate: new Date().toISOString().split('T')[0],
+                        broker: PROVIDERS[b.provider]?.label || b.provider,
+                        note: 'Otomatik Senkronizasyon'
+                     };
+                     addEntry(entry);
+                     addedCount++;
+                  }
+                });
+                
+                setMessage({ text: `${addedCount} adet varlık portföye yüklendi!`, type: 'ok' });
+              }}
+            >
+              📥 Tümünü Portföye Ekle
+            </button>
+          </div>
+          <p className="adv-hint" style={{ marginTop: '0.5rem' }}>
+            Bu veriler portföyünüze otomatik yüklenmedi. İnceleyip "Tümünü Portföye Ekle" butonu ile senkronize edebilirsiniz. (Maliyetler 0 ₺ olarak eklenecektir, sonradan düzenleyebilirsiniz).
           </p>
           <div className="table-wrapper">
             <table className="asset-table">

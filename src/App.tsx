@@ -48,10 +48,43 @@ function App() {
 
   const usdRate = prices['USD'] ?? 1;
 
+  // ── Auth & Email Verifications (Routing Interceptor) ──
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const token = params.get('token');
+    const pathname = window.location.pathname;
+
+    if (token) {
+      import('./utils/api').then(({ apiUrl }) => {
+        if (pathname === '/verify-email') {
+          fetch(apiUrl(`/auth/verify-email?token=${token}`))
+            .then(res => res.json())
+            .then(data => alert(data.message || data.detail || 'E-posta doğrulama tamamlandı.'))
+            .catch(() => alert('Sunucu ile iletişim kurulamadı.'))
+            .finally(() => window.history.replaceState({}, document.title, "/"));
+        } else if (pathname === '/reset-password') {
+          const newPassword = prompt("Lütfen yeni şifrenizi girin (en az 8 karakter):");
+          if (newPassword && newPassword.length >= 8) {
+            fetch(apiUrl('/auth/reset-password'), {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ token, new_password: newPassword })
+            }).then(res => res.json())
+              .then(data => alert(data.message || data.detail || 'Şifre güncellendi.'))
+              .catch(() => alert('Sunucu ile iletişim kurulamadı.'))
+              .finally(() => window.history.replaceState({}, document.title, "/"));
+          } else {
+            alert('Geçersiz şifre, işlem iptal edildi.');
+            window.history.replaceState({}, document.title, "/");
+          }
+        }
+      });
+    }
+  }, []);
+
   const rows: PortfolioRow[] = useMemo(() => {
     return entries
       .map((entry) => {
-        // Bug fix #4: null assertion kaldırıldı — bilinmeyen varlık filtre edilir
         const assetDef = getAssetById(entry.assetId);
         if (!assetDef) return null;
         const currentPriceTRY = prices[entry.assetId] ?? 0;
@@ -64,7 +97,6 @@ function App() {
       })
       .filter((r): r is PortfolioRow => r !== null);
   }, [entries, prices, isLoading]);
-
 
   useEffect(() => {
     if (isLoading || rows.length === 0) return;
