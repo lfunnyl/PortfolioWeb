@@ -1,7 +1,8 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { PortfolioRow, PortfolioSnapshot, AssetEntry, SaleEntry } from '../types/asset';
 import { getAssetDefinitions } from '../services/priceService';
 import { loadOptions, saveOptions as storageSaveOptions } from '../utils/storage';
+import { apiUrl } from '../utils/api';
 
 interface ProViewProps {
   rows: PortfolioRow[];
@@ -26,6 +27,8 @@ interface OptionEntry {
   expiry: string;
   qty: number;
   note?: string;
+  livePrice?: number;    // Backend'den çekilen canlı son prim
+  livePriceLoading?: boolean;
 }
 
 function generateId() { return `${Date.now()}-${Math.random().toString(36).slice(2,7)}`; }
@@ -40,6 +43,28 @@ export function ProView({ rows, snapshots, entries, sales, displayCurrency = 'TR
   const [optExpiry, setOptExpiry] = useState('');
   const [optQty, setOptQty] = useState('');
   const [optNote, setOptNote] = useState('');
+  const [optExpirations, setOptExpirations] = useState<string[]>([]);
+  const [optExpLoading, setOptExpLoading] = useState(false);
+
+  // Varlık seçildiğinde backend'den vade tarihlerini çek
+  useEffect(() => {
+    if (!optAsset) { setOptExpirations([]); return; }
+    const defs = getAssetDefinitions();
+    const def = defs.find(d => d.id === optAsset);
+    // yfinance ticker'ı bul — sadece hisse/ETF için opsiyon var
+    const ticker = def?.yfinanceTicker ?? optAsset.toUpperCase();
+    setOptExpLoading(true);
+    setOptExpirations([]);
+    setOptExpiry('');
+    fetch(apiUrl(`/options/${ticker}/expirations`))
+      .then(r => r.ok ? r.json() : null)
+      .then(data => {
+        if (data?.expirations) setOptExpirations(data.expirations);
+      })
+      .catch(() => { /* sessiz hata — tarih manuel girilebilir */ })
+      .finally(() => setOptExpLoading(false));
+  }, [optAsset]);
+
 
   // ── DCA Simülatör state ────────────────────────────────────────
 
@@ -366,7 +391,7 @@ export function ProView({ rows, snapshots, entries, sales, displayCurrency = 'TR
       {/* ══ Opsiyon Özet Kartı ════════════════════════════════ */}
       <div className="glass-card adv-section">
         <h3 className="adv-title">📋 Opsiyon Takibi</h3>
-        <p className="adv-hint">Manuel giriş — sadece pozisyon takibi, canlı fiyat çekilmez.</p>
+        <p className="adv-hint">Pozisyon ekleyin — vade tarihleri backend'den otomatik yüklenir.</p>
         <div className="opt-form">
           <select value={optAsset} onChange={e => setOptAsset(e.target.value)}>
             <option value="">Dayanak varlık...</option>
@@ -385,7 +410,27 @@ export function ProView({ rows, snapshots, entries, sales, displayCurrency = 'TR
             onChange={e => setOptPremium(e.target.value)} />
           <input type="number" placeholder="Kontrat adedi" value={optQty}
             onChange={e => setOptQty(e.target.value)} />
-          <input type="date" value={optExpiry} onChange={e => setOptExpiry(e.target.value)} />
+          {optExpirations.length > 0 ? (
+            <select
+              value={optExpiry}
+              onChange={e => setOptExpiry(e.target.value)}
+              style={{ color: optExpiry ? 'inherit' : 'var(--text-muted)' }}
+            >
+              <option value="">Vade tarihi seç...</option>
+              {optExpirations.map(d => (
+                <option key={d} value={d}>{d}</option>
+              ))}
+            </select>
+          ) : (
+            <input
+              type="date"
+              value={optExpiry}
+              onChange={e => setOptExpiry(e.target.value)}
+              placeholder={optExpLoading ? 'Yükleniyor...' : 'Vade tarihi (manuel)'}
+              disabled={optExpLoading}
+            />
+          )}
+
           <input type="text" placeholder="Not (opsiyonel)" value={optNote}
             onChange={e => setOptNote(e.target.value)} />
           <button className="btn-submit" style={{ marginTop: 0 }} onClick={handleAddOption}>+ Ekle</button>

@@ -12,11 +12,14 @@ import { DividendForm }     from './components/DividendForm';
 import { DividendView }     from './components/DividendView';
 import { DividendAutoDetect } from './components/DividendAutoDetect';
 import { NewsView }         from './components/NewsView';
-import { AdvancedView }     from './components/AdvancedView';
-import { ProView }          from './components/ProView';
-import { SimulationView }   from './components/SimulationView';
-import { ComparisonView }   from './components/ComparisonView';
-import { ConnectorView }   from './components/ConnectorView';
+import { AdvancedView }       from './components/AdvancedView';
+import { ProView }            from './components/ProView';
+import { SimulationView }     from './components/SimulationView';
+import { ComparisonView }     from './components/ComparisonView';
+import { ConnectorView }      from './components/ConnectorView';
+import { GoalTracker }        from './components/GoalTracker';
+import { RealReturnSection }  from './components/RealReturnSection';
+import { TaxHarvestingSection } from './components/TaxHarvestingSection';
 import { useLivePrices }    from './hooks/useLivePrices';
 import { loadEntries, removeEntry, loadSales, loadDividends, removeDividend, loadSnapshots, saveSnapshot } from './utils/storage';
 import { getAssetById }     from './services/priceService';
@@ -214,6 +217,19 @@ function App() {
               displayCurrency={displayCurrency}
               usdRate={usdRate}
               onEntriesChanged={handleEntriesChanged}
+            />
+            <RealReturnSection
+              rows={rows}
+            />
+            <GoalTracker
+              totalPortfolioTRY={rows.reduce((s, r) => s + r.currentValueTRY, 0)}
+              displayCurrency={displayCurrency}
+              usdRate={usdRate}
+            />
+            <TaxHarvestingSection
+              rows={rows}
+              displayCurrency={displayCurrency}
+              usdRate={usdRate}
             />
           </section>
         )}

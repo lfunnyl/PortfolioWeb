@@ -14,6 +14,7 @@ export interface AssetDefinition {
   metalKey?: string;
   forexKey?: string;
   stockKey?: string;
+  yfinanceTicker?: string;
 }
 
 /** Kısmi tarih — kullanıcı sadece bir kısmını bilebilir */

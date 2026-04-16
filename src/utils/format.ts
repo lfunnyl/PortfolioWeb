@@ -1,43 +1,73 @@
-/**
- * Ortak para birimi ve sayı biçimlendirici yardımcıları.
- * Tüm bileşenlerde bu dosyadan import edilmeli, dosya başında tekrar tanımlanmamalı.
- */
+import { PartialDate, QuantityUnit } from '../types/asset';
 
-export type DisplayCurrency = 'TRY' | 'USD';
+// ─── ID / Dönüşüm Yardımcıları ───────────────────────────────────────────────
 
-/** ₺1.234,56 veya $1,234.56 */
-export function fmtCurr(n: number, curr: DisplayCurrency = 'TRY', decimals = 2): string {
-  const sym = curr === 'TRY' ? '₺' : '$';
-  return sym + n.toLocaleString(curr === 'TRY' ? 'tr-TR' : 'en-US', {
-    minimumFractionDigits: decimals,
-    maximumFractionDigits: decimals,
-  });
+/** Benzersiz ID üretir. */
+export function generateId(): string {
+  return `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
 }
 
-/** Kısa format: ₺1,2M / ₺340K / ₺123 */
-export function fmtCompact(n: number, curr: DisplayCurrency = 'TRY'): string {
+/** Kısmi tarih → ISO string (eksik kısımlar 01 kabul edilir). */
+export function partialToIso(p: PartialDate): string {
+  if (!p.year) return '';
+  return `${p.year}-${String(p.month ?? 1).padStart(2, '0')}-${String(p.day ?? 1).padStart(2, '0')}`;
+}
+
+/** ISO string → kısmi tarih. */
+export function isoToPartial(iso: string): PartialDate {
+  if (!iso) return {};
+  const [y, m, d] = iso.split('-').map(Number);
+  return { year: y, month: m, day: d };
+}
+
+/** Metal miktarını gram'a dönüştürür. */
+export function toGram(qty: number, unit: QuantityUnit): number {
+  if (unit === 'kg') return qty * 1000;
+  if (unit === 'troy_oz') return qty * 31.1035;
+  return qty;
+}
+
+/** TRY → görüntüleme para birimi dönüşümü. */
+export function toDisplay(n: number, curr: 'TRY' | 'USD', usdRate: number): number {
+  return curr === 'USD' ? n / usdRate : n;
+}
+
+// ─── Para & Sayı Formatlama ──────────────────────────────────────────────────
+
+/** Sayıyı Türk lirası biçiminde formatlar. */
+export function fmtTRY(n: number): string {
+  return '₺' + n.toLocaleString('tr-TR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+/** Sayıyı para birimi seçimine göre formatlar. */
+export function fmtCurr(n: number, curr: 'TRY' | 'USD' = 'TRY'): string {
+  return (curr === 'TRY' ? '₺' : '$') +
+    n.toLocaleString(curr === 'TRY' ? 'tr-TR' : 'en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+/** Yüzde formatlar (işaret dahil). */
+export function fmtPct(n: number): string {
+  return `${n >= 0 ? '+' : ''}${n.toFixed(2)}%`;
+}
+
+/**
+ * Büyük sayıları kısaltır: 1.500.000 → ₺1,5M / $1.5M
+ * Opsiyonel curr: 'TRY' veya 'USD'
+ */
+export function fmtCompact(n: number, curr: 'TRY' | 'USD' = 'TRY'): string {
   const sym = curr === 'TRY' ? '₺' : '$';
   const abs = Math.abs(n);
-  if (abs >= 1_000_000) return `${sym}${(n / 1_000_000).toFixed(2)}M`;
-  if (abs >= 1_000)     return `${sym}${(n / 1_000).toFixed(1)}K`;
+  const sign = n < 0 ? '-' : '';
+  if (abs >= 1_000_000_000) return `${sign}${sym}${(abs / 1_000_000_000).toFixed(1)}Myr`;
+  if (abs >= 1_000_000)     return `${sign}${sym}${(abs / 1_000_000).toFixed(1)}M`;
+  if (abs >= 1_000)         return `${sign}${sym}${(abs / 1_000).toFixed(1)}B`;
   return fmtCurr(n, curr);
 }
 
-/** Yüzde: +12.34% */
-export function fmtPct(n: number, signed = true): string {
-  const s = signed && n > 0 ? '+' : '';
-  return `${s}${n.toFixed(2)}%`;
-}
-
-/** Düz sayı: 1.234,56 */
+/**
+ * Sayıyı ondalık basamak sayısıyla formatlar.
+ * @param decimals - varsayılan 2
+ */
 export function fmtNum(n: number, decimals = 2): string {
-  return n.toLocaleString('tr-TR', {
-    minimumFractionDigits: decimals,
-    maximumFractionDigits: decimals,
-  });
-}
-
-/** Dövize göre n'yi görüntülenecek değere dönüştür */
-export function toDisplay(tryAmount: number, curr: DisplayCurrency, usdRate: number): number {
-  return curr === 'USD' ? tryAmount / usdRate : tryAmount;
+  return n.toLocaleString('tr-TR', { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
 }
