@@ -59,7 +59,7 @@ sabit büyüme yerine varlıkların volatilitesine göre değerlerini alıp rast
 oynatarak "5 Yıl sonra portföyünün %90 olasılıkla 1 Milyon TL ile 4 Milyon TL arasında olma 
 ihtimali var" gibi stokastik modeller çizebiliriz.
 
-9.RSI ve MACD Göstergeleri ile Al-Sat Sinyalleri **
+BİTTİ 9.RSI ve MACD Göstergeleri ile Al-Sat Sinyalleri **
    https://claude.ai/share/56f5c82a-589c-4f1d-8cb2-0eeda8626263
 
 

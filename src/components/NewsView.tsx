@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { fetchFinanceNews, NewsItem } from '../services/newsService';
+import { AiNewsAssistant } from './AiNewsAssistant';
 
 const CATEGORY_LABELS: Record<string, { label: string; icon: string; color: string }> = {
   crypto:   { label: 'Kripto',  icon: '₿', color: '#f59e0b' },
@@ -36,6 +37,8 @@ export function NewsView() {
 
   return (
     <div>
+      <AiNewsAssistant tickers={['SPY', 'BTC-USD']} />
+      
       {/* Filtre Butonları */}
       <div style={{ display: 'flex', gap: '0.4rem', marginBottom: '1rem', flexWrap: 'wrap' }}>
         <button
@@ -104,12 +107,32 @@ export function NewsView() {
                       display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical',
                       overflow: 'hidden', textOverflow: 'ellipsis',
                     }}>{item.title}</h4>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.4rem' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginTop: '0.4rem', flexWrap: 'wrap' }}>
                       {item.source && (
                         <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{item.source}</span>
                       )}
                       <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', opacity: 0.6 }}>·</span>
                       <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{timeAgo(item.pubDate)}</span>
+                      
+                      {item.sentiment_label && (
+                        <>
+                          <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', opacity: 0.6 }}>·</span>
+                          <span style={{ 
+                            fontSize: '0.7rem', 
+                            fontWeight: 600,
+                            padding: '2px 6px', 
+                            borderRadius: '4px',
+                            background: item.sentiment_label.includes('Pozitif') ? 'rgba(34, 197, 94, 0.1)' : 
+                                        item.sentiment_label.includes('Negatif') ? 'rgba(239, 68, 68, 0.1)' : 
+                                        'rgba(156, 163, 175, 0.1)',
+                            color: item.sentiment_label.includes('Pozitif') ? '#22c55e' : 
+                                   item.sentiment_label.includes('Negatif') ? '#ef4444' : 
+                                   '#9ca3af',
+                          }}>
+                            {item.sentiment_label}
+                          </span>
+                        </>
+                      )}
                     </div>
                   </div>
                   <span style={{

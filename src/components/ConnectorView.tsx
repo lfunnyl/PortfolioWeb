@@ -378,28 +378,29 @@ export function ConnectorView() {
               onClick={() => {
                 const defs = getAssetDefinitions();
                 let addedCount = 0;
-                
+
                 syncedBalances.forEach(b => {
                   if (b.quantity <= 0) return;
                   // Binance returns 'BTC', we map to 'BTC' crypto or 'XAU' etc.
                   let match = defs.find(d => d.symbol === b.asset || d.id === b.asset);
                   if (!match && b.asset === 'ETH') match = defs.find(d => d.id === 'ETH');
-                  
+
                   if (match) {
-                     const entry: AssetEntry = {
-                        id: Date.now().toString() + Math.random().toString(36).substr(2, 5),
-                        assetId: match.id,
-                        quantity: b.quantity,
-                        purchasePriceTRY: 0,
-                        purchaseDate: new Date().toISOString().split('T')[0],
-                        broker: PROVIDERS[b.provider]?.label || b.provider,
-                        note: 'Otomatik Senkronizasyon'
-                     };
-                     addEntry(entry);
-                     addedCount++;
+                    const entry: AssetEntry = {
+                      id: Date.now().toString() + Math.random().toString(36).substr(2, 5),
+                      assetId: match.id,
+                      quantity: b.quantity,
+                      purchasePriceTRY: 0,
+                      purchaseDate: new Date().toISOString().split('T')[0],
+                      createdAt: new Date().toISOString(),
+                      broker: PROVIDERS[b.provider]?.label || b.provider,
+                      note: 'Otomatik Senkronizasyon'
+                    };
+                    addEntry(entry);
+                    addedCount++;
                   }
                 });
-                
+
                 setMessage({ text: `${addedCount} adet varlık portföye yüklendi!`, type: 'ok' });
               }}
             >

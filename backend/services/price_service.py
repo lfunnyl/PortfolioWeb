@@ -100,6 +100,13 @@ def fetch_bulk_prices(db: Session, asset_ids: list[str]) -> dict:
                         cached.updated_at = now
                     else:
                         db.add(models.PriceCache(asset_id=aid, price=price, updated_at=now))
+                else:
+                    # Zero price caching to prevent spam DOS against yfinance limit
+                    cached = db.query(models.PriceCache).filter(models.PriceCache.asset_id == aid).first()
+                    if cached:
+                        cached.updated_at = now
+                    else:
+                        db.add(models.PriceCache(asset_id=aid, price=0.0, updated_at=now))
         except Exception as e:
             print("YFinance fetch error:", e)
 

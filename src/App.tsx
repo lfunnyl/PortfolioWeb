@@ -20,6 +20,7 @@ import { ConnectorView }      from './components/ConnectorView';
 import { GoalTracker }        from './components/GoalTracker';
 import { RealReturnSection }  from './components/RealReturnSection';
 import { TaxHarvestingSection } from './components/TaxHarvestingSection';
+import { TechnicalSignalsSection } from './components/TechnicalSignalsSection';
 import { useLivePrices }    from './hooks/useLivePrices';
 import { loadEntries, removeEntry, loadSales, loadDividends, removeDividend, loadSnapshots, saveSnapshot } from './utils/storage';
 import { getAssetById }     from './services/priceService';
@@ -280,6 +281,7 @@ function App() {
               displayCurrency={displayCurrency}
               usdRate={usdRate}
             />
+            <TechnicalSignalsSection rows={rows} />
           </section>
         )}
 
