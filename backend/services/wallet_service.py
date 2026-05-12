@@ -83,7 +83,7 @@ class WalletService:
         if not address:
             return []
         try:
-            url = "https://cloudflare-eth.com"
+            url = "https://eth-mainnet.public.blastapi.io"
             payload = {
                 "jsonrpc": "2.0",
                 "method": "eth_getBalance",
