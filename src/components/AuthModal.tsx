@@ -23,6 +23,8 @@ export function AuthModal({ onClose }: AuthModalProps) {
   const [view, setView] = useState<AuthView>('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [passwordConfirm, setPasswordConfirm] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -74,6 +76,7 @@ export function AuthModal({ onClose }: AuthModalProps) {
     e.preventDefault();
     setLoading(true); setError('');
     if (password.length < 8) { setError('Şifre en az 8 karakter olmalıdır.'); setLoading(false); return; }
+    if (password !== passwordConfirm) { setError('Şifreler eşleşmiyor.'); setLoading(false); return; }
     try {
       const res = await fetch(apiUrl('/auth/register'), {
         method: 'POST',
@@ -216,11 +219,24 @@ export function AuthModal({ onClose }: AuthModalProps) {
           <input type="email" required value={email}
             onChange={e => setEmail(e.target.value)} placeholder="email@adresiniz.com" />
         </div>
-        <div className="form-group">
+        <div className="form-group" style={{ position: 'relative' }}>
           <label>Şifre {!isLogin && <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>(en az 8 karakter)</span>}</label>
-          <input type="password" required value={password}
-            onChange={e => setPassword(e.target.value)} placeholder="••••••••" />
+          <input type={showPassword ? "text" : "password"} required value={password}
+            onChange={e => setPassword(e.target.value)} placeholder="••••••••" style={{ paddingRight: '40px' }} />
+          <button type="button" onClick={() => setShowPassword(!showPassword)}
+            style={{ position: 'absolute', right: '10px', top: '34px', background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: '1.2rem' }}
+            title={showPassword ? "Şifreyi Gizle" : "Şifreyi Göster"}>
+            {showPassword ? '👁️' : '👁️‍🗨️'}
+          </button>
         </div>
+
+        {!isLogin && (
+          <div className="form-group" style={{ position: 'relative' }}>
+            <label>Şifre Tekrar</label>
+            <input type={showPassword ? "text" : "password"} required value={passwordConfirm}
+              onChange={e => setPasswordConfirm(e.target.value)} placeholder="••••••••" style={{ paddingRight: '40px' }} />
+          </div>
+        )}
 
         {error && <p style={{ color: '#ef4444', fontSize: '0.85rem', margin: 0 }}>{error}</p>}
 
