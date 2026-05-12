@@ -179,11 +179,9 @@ Fiyat Öngörüleri & Monte Carlo Senaryoları: Klasik lineer büyüme yerine, v
 
 🟨 2. VARLIK GENİŞLİĞİ (Kapsamlı Takip)
 --------------------------------------------------------------------------------
- - Banka Hesapları + TL Mevduat: Nakit ve mevduat faiz getirilerinin entegrasyonu.
- - Gayrimenkul Takibi: Ev ve arsa değerlerinin manuel/endeks bazlı takibi.
- - Emeklilik Fonları (BES/SGK): Uzun vadeli birikimlerin merkezi görünümü.
- - Otomobil / Fiziksel Varlıklar: Araç değer takibi ve diğer değerli eşyalar.
- - NFT & DeFi: On-chain varlıklar ve merkeziyetsiz finans pozisyonları.
+ BİTTİ - Pasif Gelir Akışları (Kira, Mevduat, Otomatik Temettü): Düzenli nakit akışlarının ve mevduat faizlerinin takibi.
+ - Gayrimenkul & Araç Değerleme: Enflasyon endeksli veya manuel değer takibi.
+ - Emeklilik Fonları (BES/SGK) & NFT/DeFi: İleri düzey varlık entegrasyonları.
 
 🟩 3. UX & KOLAY KULLANIM (Deneyim)
 --------------------------------------------------------------------------------
