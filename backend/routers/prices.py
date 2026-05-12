@@ -1,14 +1,44 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, WebSocket, WebSocketDisconnect
 from sqlalchemy.orm import Session
-from database import get_db
+from database import get_db, SessionLocal
 from pydantic import BaseModel
 from typing import List
+import asyncio
 from services.price_service import fetch_bulk_prices
 
 router = APIRouter()
 
 class AssetMapRequest(BaseModel):
     asset_ids: List[str]
+
+@router.websocket("/ws")
+async def websocket_prices(websocket: WebSocket, assets: str):
+    await websocket.accept()
+    asset_list = [a.strip() for a in assets.split(",")]
+    if not asset_list:
+        await websocket.close()
+        return
+
+    try:
+        while True:
+            # Perform blocking DB/API ops in a thread if needed, but since it's a loop it's okay for now.
+            db = SessionLocal()
+            try:
+                # WebSocket üzerinden her 1 dakikada bir cache yenilemeye zorla (daha taze fiyatlar)
+                prices = fetch_bulk_prices(db, asset_list, cache_minutes=1)
+                await websocket.send_json(prices)
+            finally:
+                db.close()
+            # 15 saniyede bir fiyatları gönder
+            await asyncio.sleep(15)
+    except WebSocketDisconnect:
+        pass
+    except Exception as e:
+        print("WebSocket Error:", e)
+        try:
+            await websocket.close()
+        except:
+            pass
 
 @router.post("/bulk")
 def get_prices_bulk(request: AssetMapRequest, db: Session = Depends(get_db)):

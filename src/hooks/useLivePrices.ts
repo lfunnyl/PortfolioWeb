@@ -1,7 +1,7 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { fetchAllPrices, PriceMap } from '../services/priceService';
+import { apiUrl } from '../utils/api';
 
-const REFRESH_MS = 60_000;
 const PRICE_CACHE_KEY = 'portfolio_price_cache_v1';
 
 interface UseLivePricesResult {
@@ -27,17 +27,16 @@ function saveCachedPrices(prices: PriceMap): void {
 }
 
 export function useLivePrices(assetIds: string[]): UseLivePricesResult {
-  // Bug fix #9: Açılışta cache'den fiyatları yükle, API gelmeden önce 0 gösterme
   const [prices, setPrices]           = useState<PriceMap>(() => loadCachedPrices());
   const [isLoading, setIsLoading]     = useState(false);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const [error, setError]             = useState<string | null>(null);
+  const wsRef = useRef<WebSocket | null>(null);
 
   const key = assetIds.slice().sort().join(',');
 
   const doFetch = useCallback(async () => {
     if (assetIds.length === 0) return;
-    // Bug fix Visibility API: Sekme gizliyse fetch yapmaz
     if (document.visibilityState === 'hidden') return;
     setIsLoading(true);
     setError(null);
@@ -45,7 +44,7 @@ export function useLivePrices(assetIds: string[]): UseLivePricesResult {
       const data = await fetchAllPrices(assetIds);
       setPrices((prev) => {
         const merged = { ...prev, ...data };
-        saveCachedPrices(merged); // Her başarılı çekimde cache güncelle
+        saveCachedPrices(merged);
         return merged;
       });
       setLastUpdated(new Date());
@@ -55,19 +54,60 @@ export function useLivePrices(assetIds: string[]): UseLivePricesResult {
     } finally {
       setIsLoading(false);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [key]);
 
+  // İlk yükleme
   useEffect(() => { doFetch(); }, [doFetch]);
 
+  // WebSocket Entegrasyonu (Push)
   useEffect(() => {
     if (assetIds.length === 0) return;
-    const timer = setInterval(doFetch, REFRESH_MS);
+    
+    const wsUrl = apiUrl('/prices/ws').replace(/^http/, 'ws') + '?assets=' + encodeURIComponent(key);
+    const ws = new WebSocket(wsUrl);
+    wsRef.current = ws;
+
+    ws.onopen = () => {
+      setError(null);
+    };
+
+    ws.onmessage = (event) => {
+      try {
+        const data = JSON.parse(event.data) as PriceMap;
+        setPrices(prev => {
+          const merged = { ...prev, ...data };
+          saveCachedPrices(merged);
+          return merged;
+        });
+        setLastUpdated(new Date());
+      } catch (e) {
+        console.error("WS Parse error", e);
+      }
+    };
+
+    ws.onerror = () => {
+      // Sessizce HTTP fallback'e (doFetch) devam etmesini sağlayabiliriz
+      console.warn('WebSocket bağlantı hatası, HTTP kullanılacak.');
+    };
+
+    return () => {
+      ws.close();
+      wsRef.current = null;
+    };
+  }, [key]);
+
+  // HTTP Fallback (Eğer WS çökerse veya bağlanmazsa)
+  useEffect(() => {
+    if (assetIds.length === 0) return;
+    const timer = setInterval(() => {
+      // Eğer WebSocket kapalıysa manuel çek (Fallback)
+      if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) {
+        doFetch();
+      }
+    }, 60_000);
     return () => clearInterval(timer);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [doFetch]);
 
-  // Bug fix Visibility API: Sekme tekrar görünür olunca yenile
   useEffect(() => {
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible') doFetch();

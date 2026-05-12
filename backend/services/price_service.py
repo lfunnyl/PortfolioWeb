@@ -25,8 +25,8 @@ def get_yfinance_ticker(asset_id: str) -> str:
             return f"{asset_id_upper}.IS"
         return asset_id_upper
 
-def fetch_bulk_prices(db: Session, asset_ids: list[str]) -> dict:
-    CACHE_DURATION = timedelta(minutes=15)
+def fetch_bulk_prices(db: Session, asset_ids: list[str], cache_minutes: int = 15) -> dict:
+    CACHE_DURATION = timedelta(minutes=cache_minutes)
     now = datetime.utcnow()
     result = {"TRY_CASH": 1.0}
     need_fetch = []
