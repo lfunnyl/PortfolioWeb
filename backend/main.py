@@ -16,8 +16,10 @@ logger = logging.getLogger(__name__)
 
 # Tabloları veritabanında oluştur
 try:
+    # Tüm tabloları sil ve güncel modellerle yeniden oluştur
+    Base.metadata.drop_all(bind=engine)
     Base.metadata.create_all(bind=engine)
-    logger.info("✅ Veritabanı tabloları başarıyla oluşturuldu / doğrulandı.")
+    logger.info("✅ Veritabanı tabloları BAŞTAN oluşturuldu / güncellendi.")
 except Exception as e:
     logger.error(f"❌ Veritabanı başlatma hatası: {e}")
     raise
