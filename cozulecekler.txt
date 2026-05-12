@@ -174,8 +174,8 @@ Fiyat Öngörüleri & Monte Carlo Senaryoları: Klasik lineer büyüme yerine, v
  BİTTİ - Cloud Sync + Auth (Supabase/PostgreSQL): Veri kalıcılığı ve çok cihazlı erişim için temel şart. (Tam otomatik arka plan senkronizasyonu eklendi)
  BİTTİ - Canlı Cüzdan ve Broker Entegrasyonu (Cüzdan Adresinden Otomatik Veri Çekme, BlastAPI RPC)
  BİTTİ - Profesyonel E-posta ve Anti-Spam Altyapısı (Cloudflare Turnstile, Seamless Password Migration, Auto-Login UX)
- - Mobil PWA / Responsive Tasarım: Her yerden erişim için mobil uygulama deneyimi.
- - Otomatik Fiyat Güncelleme (Push/WebSocket): Gerçek zamanlı portföy izleme.
+ BİTTİ - Mobil PWA / Responsive Tasarım: Her yerden erişim için mobil uygulama deneyimi.
+ BİTTİ - Otomatik Fiyat Güncelleme (Push/WebSocket): Gerçek zamanlı portföy izleme.
 
 🟨 2. VARLIK GENİŞLİĞİ (Kapsamlı Takip)
 --------------------------------------------------------------------------------
