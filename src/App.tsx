@@ -31,6 +31,12 @@ import { AssetEntry, PortfolioRow, SaleEntry, DividendEntry, PortfolioSnapshot }
 import './index.css';
 
 type Tab = 'portfolio' | 'sales' | 'dividends' | 'advanced' | 'pro' | 'comparison' | 'simulation' | 'news' | 'connectors';
+type AppMode = 'simple' | 'pro';
+
+// Hangi sekmeler hangi modda görünür
+const SIMPLE_TABS: Tab[] = ['portfolio', 'sales', 'dividends', 'news'];
+const PRO_TABS:    Tab[] = ['portfolio', 'sales', 'dividends', 'advanced', 'pro', 'comparison', 'simulation', 'news', 'connectors'];
+
 
 function App() {
   const [entries,      setEntries]      = useState<AssetEntry[]>(() => loadEntries());
@@ -42,6 +48,24 @@ function App() {
   const [sellingEntry, setSellingEntry] = useState<AssetEntry | null>(null);
   const [sellingPriceTRY, setSellingPriceTRY] = useState<number>(0);
   const [displayCurrency, setDisplayCurrency] = useState<'TRY' | 'USD'>('TRY');
+  const [appMode, setAppMode] = useState<AppMode>(() => {
+    return (localStorage.getItem('app_mode') as AppMode) ?? 'simple';
+  });
+
+  const visibleTabs = appMode === 'simple' ? SIMPLE_TABS : PRO_TABS;
+
+  function toggleMode() {
+    setAppMode(prev => {
+      const next: AppMode = prev === 'simple' ? 'pro' : 'simple';
+      localStorage.setItem('app_mode', next);
+      // Aktif sekme pro modda yoksa portföye dön
+      if (next === 'simple' && !SIMPLE_TABS.includes(activeTab)) {
+        setActiveTab('portfolio');
+      }
+      return next;
+    });
+  }
+
 
   const activeAssetIds = useMemo(
     () => Array.from(new Set(entries.map((e) => e.assetId))),
@@ -169,35 +193,63 @@ function App() {
       <main className="main-content">
         {error && <div className="error-banner">⚠️ {error}</div>}
 
-        <div className="tabs-bar">
-          <button className={`tab-btn ${activeTab === 'portfolio' ? 'tab-active' : ''}`} onClick={() => setActiveTab('portfolio')}>
-            📈 Portföyüm <span className="tab-badge">{entries.length}</span>
-          </button>
-          <button className={`tab-btn ${activeTab === 'sales' ? 'tab-active' : ''}`} onClick={() => setActiveTab('sales')}>
-            💰 Satışlar <span className="tab-badge">{sales.length}</span>
-          </button>
-          <button className={`tab-btn ${activeTab === 'dividends' ? 'tab-active' : ''}`} onClick={() => setActiveTab('dividends')}>
-            🏦 Temettüler
-            {totalDividendTRY > 0 && <span className="tab-badge" style={{ background: '#10b981' }}>{dividends.length}</span>}
-          </button>
-          <button className={`tab-btn ${activeTab === 'advanced' ? 'tab-active' : ''}`} onClick={() => setActiveTab('advanced')}>
-            🔬 Gelişmiş
-          </button>
-          <button className={`tab-btn pro-tab ${activeTab === 'pro' ? 'tab-active' : ''}`} onClick={() => setActiveTab('pro')}>
-            ⭐ Pro
-          </button>
-          <button className={`tab-btn ${activeTab === 'comparison' ? 'tab-active' : ''}`} onClick={() => setActiveTab('comparison')}>
-            ⚖️ Kıyaslama
-          </button>
-          <button className={`tab-btn sim-tab ${activeTab === 'simulation' ? 'tab-active' : ''}`} onClick={() => setActiveTab('simulation')}>
-            🔮 Simülasyon
-          </button>
-          <button className={`tab-btn ${activeTab === 'news' ? 'tab-active' : ''}`} onClick={() => setActiveTab('news')}>
-            📰 Haberler
-          </button>
-          <button className={`tab-btn ${activeTab === 'connectors' ? 'tab-active' : ''}`} onClick={() => setActiveTab('connectors')}>
-            🔗 Cüzdanlar
-          </button>
+        {/* ── Mod Toggle + Sekme Çubuğu ── */}
+        <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', borderBottom: '1px solid var(--border)', marginBottom: 0 }}>
+
+          {/* Sekmeler */}
+          <div className="tabs-bar" style={{ borderBottom: 'none', flex: 1, flexWrap: 'nowrap', overflowX: 'auto' }}>
+            {visibleTabs.map(tab => {
+              const META: Record<Tab, { label: string; icon: string; badge?: React.ReactNode }> = {
+                portfolio:  { label: 'Portföyüm',   icon: '📈', badge: <span className="tab-badge">{entries.length}</span> },
+                sales:      { label: 'Satışlar',     icon: '💰', badge: <span className="tab-badge">{sales.length}</span> },
+                dividends:  { label: 'Temettüler',   icon: '🏦', badge: totalDividendTRY > 0 ? <span className="tab-badge" style={{ background: '#10b981' }}>{dividends.length}</span> : undefined },
+                advanced:   { label: 'Gelişmiş',     icon: '🔬' },
+                pro:        { label: 'Pro Analiz',   icon: '⭐' },
+                comparison: { label: 'Kıyaslama',    icon: '⚖️' },
+                simulation: { label: 'Simülasyon',   icon: '🔮' },
+                news:       { label: 'Haberler',     icon: '📰' },
+                connectors: { label: 'Cüzdanlar',    icon: '🔗' },
+              };
+              const m = META[tab];
+              return (
+                <button
+                  key={tab}
+                  className={`tab-btn ${activeTab === tab ? 'tab-active' : ''}`}
+                  onClick={() => setActiveTab(tab)}
+                >
+                  {m.icon} {m.label} {m.badge}
+                </button>
+              );
+            })}
+          </div>
+
+          {/* Basit / Pro Toggle */}
+          <div style={{ flexShrink: 0, display: 'flex', alignItems: 'center', paddingBottom: '4px', paddingLeft: '12px' }}>
+            <button
+              onClick={toggleMode}
+              title={appMode === 'simple' ? 'Pro moda geç' : 'Basit moda dön'}
+              style={{
+                display: 'flex', alignItems: 'center', gap: '0.4rem',
+                padding: '0.35rem 0.85rem',
+                borderRadius: '20px',
+                border: appMode === 'pro' ? '1px solid #f59e0b' : '1px solid var(--border)',
+                background: appMode === 'pro'
+                  ? 'linear-gradient(135deg, rgba(245,158,11,0.18), rgba(234,179,8,0.08))'
+                  : 'var(--surface)',
+                color: appMode === 'pro' ? '#fbbf24' : 'var(--text-muted)',
+                fontSize: '0.78rem', fontWeight: 700, cursor: 'pointer',
+                transition: 'all 0.25s',
+                fontFamily: 'inherit',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              {appMode === 'simple' ? (
+                <><span>✦ Basit</span><span style={{ opacity: 0.5, fontSize: '0.7rem' }}>→ Pro</span></>
+              ) : (
+                <><span>⭐ Pro</span><span style={{ opacity: 0.6, fontSize: '0.7rem' }}>→ Basit</span></>
+              )}
+            </button>
+          </div>
         </div>
 
         {activeTab === 'portfolio' && (
@@ -209,11 +261,23 @@ function App() {
               usdRate={usdRate}
               totalDividendTRY={totalDividendTRY}
             />
-            <div className="portfolio-charts-row">
-              <PerformanceChart snapshots={snapshots} displayCurrency={displayCurrency} usdRate={usdRate} />
+
+            {/* Pro modda: Tüm grafikler görünür */}
+            {appMode === 'pro' && (
+              <>
+                <div className="portfolio-charts-row">
+                  <PerformanceChart snapshots={snapshots} displayCurrency={displayCurrency} usdRate={usdRate} />
+                  <PortfolioPieChart rows={rows} displayCurrency={displayCurrency} usdRate={usdRate} />
+                </div>
+                <PortfolioChart rows={rows} displayCurrency={displayCurrency} usdRate={usdRate} />
+              </>
+            )}
+
+            {/* Basit modda: sadece pasta grafik (kolay anlaşılır) */}
+            {appMode === 'simple' && rows.length > 0 && (
               <PortfolioPieChart rows={rows} displayCurrency={displayCurrency} usdRate={usdRate} />
-            </div>
-            <PortfolioChart rows={rows} displayCurrency={displayCurrency} usdRate={usdRate} />
+            )}
+
             <AssetForm
               onEntryAdded={handleEntryAdded}
               onEntryUpdated={handleEntryUpdated}
@@ -235,8 +299,42 @@ function App() {
                 usdRate={usdRate}
               />
             </section>
+
+            {/* Basit modda Pro tanıtım kartı */}
+            {appMode === 'simple' && (
+              <div
+                className="glass-card"
+                style={{
+                  background: 'linear-gradient(135deg, rgba(245,158,11,0.08), rgba(139,92,246,0.06))',
+                  border: '1px solid rgba(245,158,11,0.25)',
+                  display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                  padding: '1rem 1.5rem', gap: '1rem', flexWrap: 'wrap',
+                }}
+              >
+                <div>
+                  <div style={{ fontWeight: 700, fontSize: '0.95rem', color: '#fbbf24', marginBottom: '0.25rem' }}>
+                    ⭐ Pro Analiz Araçlarına Ulaş
+                  </div>
+                  <div style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>
+                    Teknik göstergeler (RSI/MACD), Monte Carlo simülasyonu, fiyat tahmini ve çok daha fazlası
+                  </div>
+                </div>
+                <button
+                  onClick={toggleMode}
+                  style={{
+                    padding: '0.5rem 1.2rem', borderRadius: '20px', border: '1px solid #f59e0b',
+                    background: 'linear-gradient(135deg, rgba(245,158,11,0.2), rgba(234,179,8,0.1))',
+                    color: '#fbbf24', fontWeight: 700, fontSize: '0.85rem', cursor: 'pointer',
+                    fontFamily: 'inherit', whiteSpace: 'nowrap',
+                  }}
+                >
+                  Pro Moda Geç →
+                </button>
+              </div>
+            )}
           </>
         )}
+
 
         {activeTab === 'sales' && (
           <section className="table-section">
