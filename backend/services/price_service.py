@@ -30,7 +30,7 @@ def fetch_bulk_prices(db: Session, asset_ids: list[str]) -> dict:
     now = datetime.utcnow()
     result = {"TRY_CASH": 1.0}
     need_fetch = []
-    
+
     # 1. DB Cache Check
     for aid in asset_ids:
         if aid == "TRY_CASH": continue
@@ -44,69 +44,81 @@ def fetch_bulk_prices(db: Session, asset_ids: list[str]) -> dict:
         return result
 
     # 2. Collect Tickers
-    tickers_to_fetch = []
     asset_to_ticker = {}
     for aid in need_fetch:
         t = get_yfinance_ticker(aid)
         if t:
-            tickers_to_fetch.append(t)
             asset_to_ticker[aid] = t
-            
-    is_usd_conversion_needed = any(a in tickers_to_fetch for a in ["AAPL", "BTC-USD", "GC=F"]) or any(not t.endswith(".IS") and not t.endswith("TRY=X") for t in tickers_to_fetch)
-    usd_try_rate = 1.0
 
-    if is_usd_conversion_needed and "TRY=X" not in tickers_to_fetch:
+    tickers_to_fetch = list(set(asset_to_ticker.values()))
+
+    needs_usd = any(
+        not t.endswith(".IS") and not t.endswith("TRY=X") and not t.endswith("=X")
+        for t in tickers_to_fetch
+    )
+    if needs_usd and "TRY=X" not in tickers_to_fetch:
         tickers_to_fetch.append("TRY=X")
 
-    # 3. Yfinance Fast Download
+    usd_try_rate = 1.0
+
+    # 3. yfinance Download — sağlam multi-index parse
     if tickers_to_fetch:
-        tickers_str = " ".join(set(tickers_to_fetch))
+        tickers_str = " ".join(tickers_to_fetch)
         try:
-            # We use history to stay within yfinance limits effectively
-            data = yf.download(tickers_str, period="1d", group_by="ticker", progress=False)
-            
-            # Extract USD/TRY rate
-            if "TRY=X" in data and not data["TRY=X"].empty:
-                usd_try_rate = float(data["TRY=X"]["Close"].iloc[-1])
-            elif "TRY=X" == tickers_str and not data.empty:
-                usd_try_rate = float(data["Close"].iloc[-1])
-                
+            import pandas as pd
+            raw = yf.download(tickers_str, period="2d", progress=False, auto_adjust=True)
+
+            def safe_close(ticker_sym: str) -> float:
+                """MultiIndex veya düz DataFrame'den Close değerini çıkarır."""
+                try:
+                    if isinstance(raw.columns, pd.MultiIndex):
+                        # ('Close', 'THYAO.IS') şeklinde
+                        if ("Close", ticker_sym) in raw.columns:
+                            series = raw[("Close", ticker_sym)].dropna()
+                            if not series.empty:
+                                return float(series.iloc[-1])
+                    else:
+                        # Tek ticker indirildiyse düz columns
+                        if "Close" in raw.columns:
+                            series = raw["Close"].dropna()
+                            if not series.empty:
+                                return float(series.iloc[-1])
+                except Exception:
+                    pass
+                return 0.0
+
+            # USD/TRY kuru
+            usd_try_rate = safe_close("TRY=X") or 1.0
+
             for aid in need_fetch:
                 t = asset_to_ticker.get(aid)
                 price = 0.0
                 if t:
-                    try:
-                        # yf.download structure depends on number of tickers
-                        if len(set(tickers_to_fetch)) == 1:
-                            if not data.empty:
-                                price = float(data["Close"].iloc[-1])
-                        else:
-                            if t in data and not data[t].empty:
-                                price = float(data[t]["Close"].iloc[-1])
-                    except Exception as e:
-                        pass
-                
-                # Conversions to TRY 
-                if aid in ["XAU", "XAG", "XPT", "XPD"]:
-                    price = (price * usd_try_rate) / 31.1035 # Troy Oz to Gram in TRY
-                elif t and (t.endswith("-USD") or t in ["AAPL", "TSLA", "NVDA", "AMZN", "MSFT", "GOOGL", "META", "NFLX", "PLTR", "COIN", "MSTR", "AMD", "INTC", "JPM", "BAC", "V", "MA", "DIS", "BABA", "UBER", "SPOT", "SHOP", "SQ", "PYPL", "CRM", "ADBE", "ORCL", "IBM", "WMT", "KO", "PEP", "SBUX", "MCD", "XOM", "BRK-B"]):
-                    price = price * usd_try_rate
-                
+                    price = safe_close(t)
+
+                    # TRY'ye çevir
+                    if aid in ["XAU", "XAG", "XPT", "XPD"]:
+                        price = (price * usd_try_rate) / 31.1035  # troy oz → gram TRY
+                    elif t and (
+                        t.endswith("-USD") or
+                        t in ["AAPL","TSLA","NVDA","AMZN","MSFT","GOOGL","META","NFLX",
+                               "PLTR","COIN","MSTR","AMD","INTC","JPM","BAC","V","MA",
+                               "DIS","BABA","UBER","SPOT","SHOP","SQ","PYPL","CRM",
+                               "ADBE","ORCL","IBM","WMT","KO","PEP","SBUX","MCD","XOM","BRK-B"]
+                    ):
+                        price = price * usd_try_rate
+
+                # Cache'i güncelle
                 if price > 0:
                     result[aid] = price
-                    cached = db.query(models.PriceCache).filter(models.PriceCache.asset_id == aid).first()
-                    if cached:
-                        cached.price = price
-                        cached.updated_at = now
-                    else:
-                        db.add(models.PriceCache(asset_id=aid, price=price, updated_at=now))
+                cached_row = db.query(models.PriceCache).filter(models.PriceCache.asset_id == aid).first()
+                if cached_row:
+                    if price > 0:
+                        cached_row.price = price
+                    cached_row.updated_at = now
                 else:
-                    # Zero price caching to prevent spam DOS against yfinance limit
-                    cached = db.query(models.PriceCache).filter(models.PriceCache.asset_id == aid).first()
-                    if cached:
-                        cached.updated_at = now
-                    else:
-                        db.add(models.PriceCache(asset_id=aid, price=0.0, updated_at=now))
+                    db.add(models.PriceCache(asset_id=aid, price=price, updated_at=now))
+
         except Exception as e:
             print("YFinance fetch error:", e)
 

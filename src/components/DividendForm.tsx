@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { DividendEntry } from '../types/asset';
 import { AssetEntry } from '../types/asset';
 import { addDividend } from '../utils/storage';
@@ -8,6 +8,7 @@ import { FormattedNumberInput } from './FormattedNumberInput';
 interface DividendFormProps {
   entries: AssetEntry[];
   onDividendAdded: (d: DividendEntry) => void;
+  usdRate?: number;
 }
 
 type DivCurrency = 'TRY' | 'USD';
@@ -16,9 +17,9 @@ function generateId() {
   return 'div_' + Math.random().toString(36).slice(2, 9) + Date.now();
 }
 
-export function DividendForm({ entries, onDividendAdded }: DividendFormProps) {
+export function DividendForm({ entries, onDividendAdded, usdRate = 1 }: DividendFormProps) {
   const [open, setOpen] = useState(false);
-  const [assetId, setAssetId] = useState(() => entries[0]?.assetId ?? '');
+  const [assetId, setAssetId] = useState('');
   const [amount, setAmount] = useState('');
   const [currency, setCurrency] = useState<DivCurrency>('TRY');
   const [date, setDate] = useState(() => new Date().toISOString().split('T')[0]);
@@ -26,6 +27,13 @@ export function DividendForm({ entries, onDividendAdded }: DividendFormProps) {
   const [error, setError] = useState('');
 
   const defs = getAssetDefinitions();
+
+  // entries değişince (örn: cloud pull sonrası) assetId'yi güncelle
+  useEffect(() => {
+    if (!assetId && entries.length > 0) {
+      setAssetId(entries[0].assetId);
+    }
+  }, [entries, assetId]);
 
   // Benzersiz assetId'leri al (portföydeki varlıklar)
   const uniqueAssets = Array.from(new Set(entries.map(e => e.assetId)))
@@ -35,11 +43,11 @@ export function DividendForm({ entries, onDividendAdded }: DividendFormProps) {
   function handleSubmit(ev: React.FormEvent) {
     ev.preventDefault();
     if (!amount || Number(amount) <= 0) { setError('Geçerli bir tutar girin'); return; }
-    if (!assetId) { setError('Varlık seçin'); return; }
+    if (!assetId) { setError('Portföyünüzden bir varlık seçin'); return; }
     setError('');
 
     const amountRaw = Number(amount);
-    const amountTRY = amountRaw; // Basitleştirme: şimdilik doğrudan TRY kabul et
+    const amountTRY = currency === 'USD' ? amountRaw * usdRate : amountRaw;
 
     const div: DividendEntry = {
       id: generateId(),
@@ -78,6 +86,7 @@ export function DividendForm({ entries, onDividendAdded }: DividendFormProps) {
         <div className="form-group">
           <label>Hisse / Varlık</label>
           <select value={assetId} onChange={e => setAssetId(e.target.value)}>
+            <option value="">— Varlık seçin —</option>
             {uniqueAssets.map(d => d && (
               <option key={d.id} value={d.id}>{d.icon} {d.name} ({d.symbol})</option>
             ))}
