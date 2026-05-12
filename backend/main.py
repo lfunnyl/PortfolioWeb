@@ -15,31 +15,27 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 # Tabloları veritabanında oluştur
-from sqlalchemy import inspect, text
-
-# migrate.py ile şemayı güncelle (Railway ilk başlatma için kritik)
 try:
-    inspector = inspect(engine)
-    existing_tables = inspector.get_table_names()
-    # Eksik tabloları oluştur
-    Base.metadata.create_all(bind=engine)
-    # users tablosuna eksik sütunları ekle
+    # SQLite/Railway ortamında şema uyumsuzluğunu önlemek için tabloları sıfırla
+    # (Railway SQLite kullandığından deploy'lar arasında zaten kalıcı değil)
+    from sqlalchemy import inspect as sa_inspect
+    inspector2 = sa_inspect(engine)
+    existing_tables = inspector2.get_table_names()
+    
     if "users" in existing_tables:
-        existing_cols = [col["name"] for col in inspector.get_columns("users")]
-        with engine.begin() as conn:
-            if "hashed_password" not in existing_cols:
-                conn.execute(text("ALTER TABLE users ADD COLUMN hashed_password VARCHAR"))
-                logger.info("✅ users.hashed_password sütunu eklendi.")
-            if "is_verified" not in existing_cols:
-                conn.execute(text("ALTER TABLE users ADD COLUMN is_verified BOOLEAN DEFAULT TRUE"))
-                logger.info("✅ users.is_verified sütunu eklendi.")
-            if "is_active" not in existing_cols:
-                conn.execute(text("ALTER TABLE users ADD COLUMN is_active BOOLEAN DEFAULT TRUE"))
-                logger.info("✅ users.is_active sütunu eklendi.")
-            if "created_at" not in existing_cols:
-                conn.execute(text("ALTER TABLE users ADD COLUMN created_at TIMESTAMP DEFAULT NOW()"))
-                logger.info("✅ users.created_at sütunu eklendi.")
-    logger.info("✅ Veritabanı şeması başarıyla güncellendi.")
+        # users tablosunda kritik sütunlar var mı kontrol et
+        existing_cols = [col["name"] for col in inspector2.get_columns("users")]
+        if "hashed_password" not in existing_cols:
+            # Eski şema: tabloları sil ve yeniden oluştur
+            logger.warning("⚠️ Eski DB şeması tespit edildi, tablolar yeniden oluşturuluyor...")
+            Base.metadata.drop_all(bind=engine)
+            Base.metadata.create_all(bind=engine)
+            logger.info("✅ Veritabanı tabloları sıfırlandı ve yeniden oluşturuldu.")
+        else:
+            logger.info("✅ DB şeması güncel, değişiklik yapılmadı.")
+    else:
+        Base.metadata.create_all(bind=engine)
+        logger.info("✅ Veritabanı tabloları ilk kez oluşturuldu.")
 except Exception as e:
     logger.error(f"❌ Veritabanı başlatma hatası: {e}")
     raise
