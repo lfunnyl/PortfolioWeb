@@ -55,6 +55,11 @@ async def login(request: Request, form_data: OAuth2PasswordRequestForm = Depends
             headers={"WWW-Authenticate": "Bearer"},
         )
 
+    # Eski şifre formatlarını bcrypt formatına otomatik güncelle (Seamless Migration)
+    if not user.hashed_password.startswith('$2'):
+        user.hashed_password = get_password_hash(form_data.password)
+        db.commit()
+
     # E-posta servisi ayarlanana kadar is_verified kontrolünü devredışı bırakıyoruz
     # if not user.is_verified:
     #     raise HTTPException(

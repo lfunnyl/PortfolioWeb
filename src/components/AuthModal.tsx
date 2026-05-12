@@ -125,7 +125,22 @@ export function AuthModal({ onClose }: AuthModalProps) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),
       });
-      if (res.ok) { setView('verify_sent'); }
+      if (res.ok) {
+        // Kayıt başarılı, otomatik giriş yap
+        const fd = new FormData();
+        fd.append('username', email);
+        fd.append('password', password);
+        const loginRes = await fetch(apiUrl('/auth/login'), { method: 'POST', body: fd });
+        if (loginRes.ok) {
+          const data = await loginRes.json();
+          login(data.access_token, email);
+          onClose();
+          window.location.reload();
+        } else {
+          setView('login');
+          setError('Kayıt başarılı ancak otomatik giriş yapılamadı. Lütfen giriş yapın.');
+        }
+      }
       else { const err = await res.json(); setError(err.detail || 'Kayıt yapılamadı.'); }
     } catch { setError('Sunucu bağlantı hatası.'); }
     finally { setLoading(false); }
