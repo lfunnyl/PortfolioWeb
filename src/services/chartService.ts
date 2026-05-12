@@ -1,6 +1,6 @@
 import { AssetDefinition } from '../types/asset';
 import { getAssetDefinitions } from './priceService';
-import { apiUrl } from './apiConfig';
+import { apiUrl } from '../utils/api';
 
 export interface ChartDataPoint {
   date: string;

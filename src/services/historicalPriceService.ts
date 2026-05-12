@@ -29,7 +29,7 @@ async function fetchCryptoHistorical(def: AssetDefinition, date: Date): Promise<
   }
 }
 
-import { apiUrl } from './apiConfig';
+import { apiUrl } from '../utils/api';
 
 // 2. Hisse Senetleri (Yahoo Finance - Backend Üzerinden)
 async function fetchStockHistorical(def: AssetDefinition, date: Date): Promise<number | null> {

@@ -12,14 +12,14 @@
    - `Marketaux API` kullanıldığı için günde en fazla ~100 istek limiti var. Sürekli sayfayı yenileyen kullanıcılar limite çok çabuk ulaşacaktır veya haberler güncellenmeyecektir.
    - Çözüm Önerisi: Ücretli bir haber API servisine geçiş yapmak veya RSS feed'lerini aracı bir webhook (AWS Lambda vs.) ile saat başı çekip sunucuda önbelleğe (Cache) almak.
 
-4. BIST ve Yurtdışı Hisselerde "Geçmiş Fiyat" Kusurları
+BİTTİ4. BIST ve Yurtdışı Hisselerde "Geçmiş Fiyat" Kusurları 
    - Yahoo Finance API'ı "proxy"ler vasıtasıyla çekildiği için anlık ağ gecikmelerinden veya allorigins.win limitlerinden dolayı zaman zaman fiyat getirmeyebilir.
    - Çözüm Önerisi: Backend kurularak her günün kapanış fiyatları (EOD data) veritabanına kaydedilmeli veya ücretli finansal borsa veri sağlayıcısı entegre edilmeli.
 
 
 yapılacaklar
-
-1-Temettü ve Faiz İçin DRIP (Bileşik Getiri) Simülatörü **
+kişiye özel supabase auth
+BİTTİ  1-Temettü ve Faiz İçin DRIP (Bileşik Getiri) Simülatörü **
 Sadece basit bir getiri oranından ziyade, "Temettülerden ve faizden gelen nakit tekrar aynı varlığa 
 yatırılırsa (Dividend Reinvestment Plan) 5, 10, 20 yılda portföy nasıl bir kar topuna dönüşür?"
 hesaplaması ekleyebiliriz.
@@ -34,17 +34,17 @@ Geçmiş projelerin finansal modelleme yeteneklerimizi buraya taşıyarak;
 bir varlığın önümüzdeki 30 gün içinde %95 güven aralığında hangi alt-üst bantlarda kalabileceğini gösteren 
 bir Zaman Serisi Tahmin (Time Series Forecasting) widget'ı koyabiliriz.
 
-4. Akıllı Vergi Hasadı (Tax-Loss Harvesting) Algoritması *****(tutarlı olması çok iyi olur)
+BİTTİ   4. Akıllı Vergi Hasadı (Tax-Loss Harvesting) Algoritması *****(tutarlı olması çok iyi olur)
 ProView içindeki FIFO Vergi hesabını bir adım üste taşıyarak; "Yıl bitiyor, 10.000 TL vergi ödemen çıkacak. 
 Ancak zararda olan şu X hissesinden satış yaparsan zararı realize edip vergini 0 TL'ye indirebilirsin" gibi yasal 
 strateji önerileri sunan bir motor yapılabilir.
 
-5. Enflasyondan Arındırılmış Gerçek Getiri (Real Return)** (çok kafa karıştırmadan)
+BİTTİ  5. Enflasyondan Arındırılmış Gerçek Getiri (Real Return)** (çok kafa karıştırmadan)
 TÜİK (veya ENAG) enflasyon verisini bir kerelik dizi olarak sisteme gömüp, portföy getirisini manşet getiri 
 yerine "Enflasyondan Arındırılmış Reel Getiri" olarak gösterebiliriz. (Örn: "%50 kârdayım sanıyorsun ama reel 
 olarak paran %5 erimiş")
 
-6. Hedef Takip Sistemi (Goal-Based Wealth)****
+BİTTİ  6. Hedef Takip Sistemi (Goal-Based Wealth)****
 Kullanıcıya "Ev Almak - 5.000.000 TL" veya "Emeklilik fonu" gibi bir hedef tanımlatıp, 
 dinamik olarak portföy getiri hızına göre hedefe ne kadar süresi kaldığını, bir ilerleme çubuğu 
 (progress bar) üzerinden oyunlaştırma ile gösterebiliriz.
@@ -54,12 +54,12 @@ dinamik olarak portföy getiri hızına göre hedefe ne kadar süresi kaldığı
    Solana Cüzdanı veya Salt Okunur (Read-Only) Midas/Binance API entegrasyonları ile varlıkları 
    tamamen canlı cüzdan akışından (Pipeline) sync edebiliriz.
 
-8. monte carlo seneryo gelişimi * 
+BİTTİ  8. monte carlo seneryo gelişimi * 
 sabit büyüme yerine varlıkların volatilitesine göre değerlerini alıp rastgele 10.000 senaryo
 oynatarak "5 Yıl sonra portföyünün %90 olasılıkla 1 Milyon TL ile 4 Milyon TL arasında olma 
 ihtimali var" gibi stokastik modeller çizebiliriz.
 
-BİTTİ 9.RSI ve MACD Göstergeleri ile Al-Sat Sinyalleri **
+BİTTİ .RSI ve MACD Göstergeleri ile Al-Sat Sinyalleri **
    https://claude.ai/share/56f5c82a-589c-4f1d-8cb2-0eeda8626263
 
 
@@ -158,3 +158,8 @@ Regülasyon (Regulatory): 🔴 Çok Negatif Kullanıcıya haberin neyinin iyi, n
  13. Makine Öğrenmesi Fiyat Öngörü (Prophet / CatBoost) & Monte Carlo Senaryoları.
  14. Algoritmik Sinyaller (RSI / MACD) ve Varlık Çıkarımı (NER) ile dolaylı risk bildirimi.
  15. Kullanıcı Davranış Analizi (Behavioral ML Profiling): FOMO'da veya kaybetme korkusuyla mı trade işlemleri yapıyor, kullanıcının veri üzerinden psikolojik analizi.
+ 1. Sayısal (Kantitatif) Veri Bilimi ve İstatistik
+Burada fiyatları (zaman serilerini) alıp matematiği konuşturacağız:
+
+Portföy Korelasyon Matrisi (Heatmap): Varlıklar (hisseler/kriptolar) birbirleriyle ne kadar birlikte hareket ediyor? (Risk Ayrıştırma)
+Fiyat Öngörüleri & Monte Carlo Senaryoları: Klasik lineer büyüme yerine, varlığın volatilitesine (oynaklığına) göre 10.000 farklı rastgele senaryo oynatıp olasılık dağılımı (stokastik modelleme) çıkaracağız.
