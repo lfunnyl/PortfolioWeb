@@ -9,6 +9,15 @@ interface AuthModalProps {
   onClose: () => void;
 }
 
+// ── Ortak container ──────────────────────────────────────────────────────
+const Modal = ({ children }: { children: React.ReactNode }) => (
+  <div className="modal-overlay">
+    <div className="glass-card modal-content" style={{ maxWidth: '400px', width: '90%' }}>
+      {children}
+    </div>
+  </div>
+);
+
 export function AuthModal({ onClose }: AuthModalProps) {
   const { login } = useAuth();
   const [view, setView] = useState<AuthView>('login');
@@ -107,14 +116,7 @@ export function AuthModal({ onClose }: AuthModalProps) {
     } finally { setLoading(false); }
   }
 
-  // ── Ortak container ──────────────────────────────────────────────────────
-  const Modal = ({ children }: { children: React.ReactNode }) => (
-    <div className="modal-overlay">
-      <div className="glass-card modal-content" style={{ maxWidth: '400px', width: '90%' }}>
-        {children}
-      </div>
-    </div>
-  );
+
 
   // ── Görünümler ────────────────────────────────────────────────────────────
 
