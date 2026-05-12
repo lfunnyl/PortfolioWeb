@@ -17,7 +17,8 @@ export function apiUrl(path: string): string {
 
   if (API_BASE) {
     // Production: direkt Railway'e git (örn: https://...railway.app/api/auth/login)
-    return `${API_BASE}/api${normalizedPath}`;
+    const baseUrl = API_BASE.startsWith('http') ? API_BASE : `https://${API_BASE}`;
+    return `${baseUrl}/api${normalizedPath}`;
   }
 
   // Geliştirme: Vite proxy üzerinden git
