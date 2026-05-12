@@ -11,14 +11,7 @@ export interface ChartDataPoint {
 export type TimeRange = '1W' | '1M' | '3M' | '6M' | '1Y' | 'YTD';
 
 // Yahoo Finance için range karşılıkları
-const YAHOO_RANGE: Record<TimeRange, string> = {
-  '1W': '5d',
-  '1M': '1mo',
-  '3M': '3mo',
-  '6M': '6mo',
-  '1Y': '1y',
-  'YTD': 'ytd'
-};
+
 
 // CoinGecko için geçmiş gün sayısı
 const CG_DAYS: Record<TimeRange, string> = {

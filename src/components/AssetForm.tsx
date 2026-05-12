@@ -1,4 +1,4 @@
-import React from 'react';
+
 import { AssetEntry, QuantityUnit } from '../types/asset';
 import { removeCustomAsset } from '../utils/storage';
 import { getAssetDefinitions } from '../services/priceService';

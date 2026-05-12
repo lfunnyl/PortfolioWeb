@@ -31,7 +31,7 @@ async def register(request: Request, user: schemas.UserCreate, db: Session = Dep
         raise HTTPException(status_code=400, detail="Bu e-posta adresi zaten kayıtlı.")
 
     hashed_pwd = get_password_hash(user.password)
-    new_user = models.User(email=user.email, hashed_password=hashed_pwd, is_verified=False)
+    new_user = models.User(email=user.email, hashed_password=hashed_pwd, is_verified=True)
     db.add(new_user)
     db.commit()
     db.refresh(new_user)
