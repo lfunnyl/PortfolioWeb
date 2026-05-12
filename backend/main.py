@@ -43,8 +43,12 @@ app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 # Production'da ALLOWED_ORIGINS env değişkenine domain ekle
 ALLOWED_ORIGINS = os.getenv(
     "ALLOWED_ORIGINS",
-    "http://localhost:5173,http://localhost:3000,http://127.0.0.1:5173"
+    "http://localhost:5173,http://localhost:3000,http://127.0.0.1:5173,https://portfolio-web-sooty-kappa.vercel.app"
 ).split(",")
+
+# Vercel URL'sini her halükarda CORS'a dahil et
+if "https://portfolio-web-sooty-kappa.vercel.app" not in ALLOWED_ORIGINS:
+    ALLOWED_ORIGINS.append("https://portfolio-web-sooty-kappa.vercel.app")
 
 app.add_middleware(
     CORSMiddleware,
