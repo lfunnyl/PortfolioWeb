@@ -7,6 +7,7 @@ class UserBase(BaseModel):
 
 class UserCreate(UserBase):
     password: str
+    turnstile_token: Optional[str] = Field(None, alias="turnstileToken")
 
 class UserOut(UserBase):
     id: int

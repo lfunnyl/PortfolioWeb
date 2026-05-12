@@ -27,6 +27,10 @@ class Settings(BaseSettings):
     # Frontend URL (doğrulama linklerinde kullanılır)
     FRONTEND_URL: str = "http://localhost:5173"
 
+    # Güvenlik & Doğrulama Geçişleri
+    REQUIRE_EMAIL_VERIFICATION: bool = False
+    TURNSTILE_SECRET_KEY: str = ""
+
     class Config:
         env_file = ".env"
 

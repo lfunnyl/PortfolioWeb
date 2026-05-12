@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { apiUrl } from '../utils/api';
 import { importData } from '../utils/storage';
+import { Turnstile } from '@marsidev/react-turnstile';
 
 type AuthView = 'login' | 'register' | 'verify_sent' | 'forgot' | 'forgot_sent';
 
@@ -9,7 +10,10 @@ interface AuthModalProps {
   onClose: () => void;
 }
 
+const TURNSTILE_SITE_KEY = (import.meta as any).env.VITE_TURNSTILE_SITE_KEY || '';
+
 const Modal = ({ children, onClose }: { children: React.ReactNode; onClose: () => void }) => (
+// ... existing Modal component ...
   <div className="modal-overlay" onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
     <div style={{
       background: 'linear-gradient(145deg, #0d1525, #0a1020)',
@@ -31,6 +35,7 @@ const Input = ({ label, type = 'text', value, onChange, placeholder, extra }: {
   label: string; type?: string; value: string;
   onChange: (v: string) => void; placeholder?: string; extra?: React.ReactNode;
 }) => (
+// ... existing Input component ...
   <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
     <label style={{ fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: '#5a6885' }}>
       {label}
@@ -76,6 +81,7 @@ export function AuthModal({ onClose }: AuthModalProps) {
   const [password, setPassword] = useState('');
   const [passwordConfirm, setPasswordConfirm] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [turnstileToken, setTurnstileToken] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
@@ -108,7 +114,7 @@ export function AuthModal({ onClose }: AuthModalProps) {
         window.location.reload();
       } else {
         const err = await res.json();
-        setError(res.status === 403 ? 'E-posta adresiniz doğrulanmadı.' : (err.detail || 'Hatalı e-posta veya şifre'));
+        setError(res.status === 403 ? 'E-posta adresiniz doğrulanmadı. Lütfen gelen kutunuzu (veya Spam klasörünü) kontrol edin.' : (err.detail || 'Hatalı e-posta veya şifre'));
       }
     } catch { setError('Sunucu bağlantı hatası.'); }
     finally { setLoading(false); }
@@ -119,14 +125,17 @@ export function AuthModal({ onClose }: AuthModalProps) {
     setLoading(true); setError('');
     if (password.length < 8) { setError('Şifre en az 8 karakter olmalıdır.'); setLoading(false); return; }
     if (password !== passwordConfirm) { setError('Şifreler eşleşmiyor.'); setLoading(false); return; }
+    if (TURNSTILE_SITE_KEY && !turnstileToken) { setError('Lütfen robot olmadığınızı doğrulayın.'); setLoading(false); return; }
+
     try {
       const res = await fetch(apiUrl('/auth/register'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ email, password, turnstileToken: turnstileToken }),
       });
       if (res.ok) {
-        // Kayıt başarılı, otomatik giriş yap
+        // Eğer e-posta doğrulaması açık değilse, otomatik giriş yapılabilir.
+        // E-posta doğrulaması açıksa, login başarılı olmayacaktır. Biz yine de deneyelim.
         const fd = new FormData();
         fd.append('username', email);
         fd.append('password', password);
@@ -137,8 +146,13 @@ export function AuthModal({ onClose }: AuthModalProps) {
           onClose();
           window.location.reload();
         } else {
-          setView('login');
-          setError('Kayıt başarılı ancak otomatik giriş yapılamadı. Lütfen giriş yapın.');
+          // Eğer 403 aldıysak, demek ki e-posta onayı aktif!
+          if (loginRes.status === 403) {
+             setView('verify_sent');
+          } else {
+             setView('login');
+             setError('Kayıt başarılı ancak otomatik giriş yapılamadı. Lütfen giriş yapın.');
+          }
         }
       }
       else { const err = await res.json(); setError(err.detail || 'Kayıt yapılamadı.'); }
@@ -318,6 +332,16 @@ export function AuthModal({ onClose }: AuthModalProps) {
 
         {!isLogin && (
           <Input label="Şifre Tekrar" type={showPassword ? 'text' : 'password'} value={passwordConfirm} onChange={setPasswordConfirm} placeholder="••••••••" />
+        )}
+
+        {!isLogin && TURNSTILE_SITE_KEY && (
+          <div style={{ marginTop: '0.5rem', display: 'flex', justifyContent: 'center' }}>
+            <Turnstile
+              siteKey={TURNSTILE_SITE_KEY}
+              onSuccess={(token) => { setTurnstileToken(token); setError(''); }}
+              onError={() => setError('Güvenlik doğrulaması yüklenemedi.')}
+            />
+          </div>
         )}
 
         {error && (

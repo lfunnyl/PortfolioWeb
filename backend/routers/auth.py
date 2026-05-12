@@ -19,6 +19,9 @@ router = APIRouter()
 limiter = Limiter(key_func=get_remote_address)
 
 
+import requests
+from core.config import settings
+
 # ── Kayıt ────────────────────────────────────────────────────────────────────
 @router.post("/register", response_model=schemas.UserOut, status_code=201)
 @limiter.limit("5/minute")
@@ -26,19 +29,42 @@ async def register(request: Request, user: schemas.UserCreate, db: Session = Dep
     if len(user.password) < 8:
         raise HTTPException(status_code=400, detail="Şifre en az 8 karakter olmalıdır.")
 
+    # Cloudflare Turnstile Doğrulaması
+    if settings.TURNSTILE_SECRET_KEY:
+        if not user.turnstile_token:
+            raise HTTPException(status_code=400, detail="Lütfen robot olmadığınızı doğrulayın.")
+        
+        try:
+            cf_res = requests.post(
+                "https://challenges.cloudflare.com/turnstile/v0/siteverify",
+                data={
+                    "secret": settings.TURNSTILE_SECRET_KEY,
+                    "response": user.turnstile_token,
+                    "remoteip": request.client.host
+                },
+                timeout=5
+            )
+            cf_data = cf_res.json()
+            if not cf_data.get("success"):
+                raise HTTPException(status_code=400, detail="Güvenlik doğrulaması başarısız oldu (Bot tespit edildi).")
+        except requests.exceptions.RequestException:
+            raise HTTPException(status_code=500, detail="Güvenlik servisine ulaşılamadı. Lütfen tekrar deneyin.")
+
     db_user = db.query(models.User).filter(models.User.email == user.email).first()
     if db_user:
         raise HTTPException(status_code=400, detail="Bu e-posta adresi zaten kayıtlı.")
 
     hashed_pwd = get_password_hash(user.password)
-    new_user = models.User(email=user.email, hashed_password=hashed_pwd, is_verified=True)
+    # Eğer e-posta doğrulaması kapalıysa, doğrudan verify yap.
+    new_user = models.User(email=user.email, hashed_password=hashed_pwd, is_verified=not settings.REQUIRE_EMAIL_VERIFICATION)
     db.add(new_user)
     db.commit()
     db.refresh(new_user)
 
     # Doğrulama e-postası gönder
-    token = create_email_verification_token(new_user.email)
-    await send_verification_email(new_user.email, token)
+    if settings.REQUIRE_EMAIL_VERIFICATION:
+        token = create_email_verification_token(new_user.email)
+        await send_verification_email(new_user.email, token)
 
     return new_user
 
@@ -60,12 +86,11 @@ async def login(request: Request, form_data: OAuth2PasswordRequestForm = Depends
         user.hashed_password = get_password_hash(form_data.password)
         db.commit()
 
-    # E-posta servisi ayarlanana kadar is_verified kontrolünü devredışı bırakıyoruz
-    # if not user.is_verified:
-    #     raise HTTPException(
-    #         status_code=status.HTTP_403_FORBIDDEN,
-    #         detail="E-posta adresiniz henüz doğrulanmadı. Lütfen gelen kutunuzu kontrol edin.",
-    #     )
+    if settings.REQUIRE_EMAIL_VERIFICATION and not user.is_verified:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="E-posta adresiniz henüz doğrulanmadı. Lütfen gelen kutunuzu (veya Spam/Gereksiz klasörünü) kontrol edin.",
+        )
 
     access_token = create_access_token(data={"sub": user.email})
     return {"access_token": access_token, "token_type": "bearer"}
