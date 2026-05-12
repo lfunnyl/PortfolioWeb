@@ -197,7 +197,7 @@ function App() {
         <div style={{ display: 'flex', alignItems: 'flex-end', justifyContent: 'space-between', borderBottom: '1px solid var(--border)', marginBottom: 0 }}>
 
           {/* Sekmeler */}
-          <div className="tabs-bar" style={{ borderBottom: 'none', flex: 1, flexWrap: 'nowrap', overflowX: 'auto' }}>
+          <div className="tabs-bar" style={{ borderBottom: 'none', flex: 1, flexWrap: 'nowrap' }}>
             {visibleTabs.map(tab => {
               const META: Record<Tab, { label: string; icon: string; badge?: React.ReactNode }> = {
                 portfolio:  { label: 'Portföyüm',   icon: '📈', badge: <span className="tab-badge">{entries.length}</span> },

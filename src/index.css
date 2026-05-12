@@ -242,6 +242,13 @@ body {
   display: flex; gap: 0.25rem;
   border-bottom: 1px solid var(--border);
   padding-bottom: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE/Edge */
+}
+.tabs-bar::-webkit-scrollbar {
+  display: none; /* Chrome/Safari/Webkit */
 }
 .tab-btn {
   display: flex; align-items: center; gap: 0.4rem;
@@ -459,7 +466,6 @@ body {
   .date-partial-row { grid-template-columns: 1fr 1fr 1fr; }
   .modal-actions    { flex-direction: column; }
   .sale-info-row    { grid-template-columns: 1fr 1fr; }
-  .tabs-bar         { overflow-x: auto; flex-wrap: nowrap; padding-bottom: 0.3rem; }
   .tab-btn          { white-space: nowrap; font-size: 0.78rem; padding: 0.5rem 0.8rem; }
 }
 
