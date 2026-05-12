@@ -5,7 +5,7 @@ from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 from database import engine, Base
-from routers import portfolio, prices, news, auth, connectors, options
+from routers import portfolio, prices, news, auth, connectors, options, income
 from core.config import settings
 import os
 import logging
@@ -93,6 +93,7 @@ app.include_router(prices.router, prefix="/api/prices", tags=["Prices"])
 app.include_router(news.router, prefix="/api/news", tags=["News"])
 app.include_router(connectors.router, prefix="/api/connectors", tags=["Connectors"])
 app.include_router(options.router,    prefix="/api/options",    tags=["Options"])
+app.include_router(income.router,     prefix="/api/income",     tags=["Income"])
 
 # ── Health Check ──────────────────────────────────────────────────────────────
 @app.get("/health", tags=["System"])

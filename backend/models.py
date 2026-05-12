@@ -3,6 +3,23 @@ from sqlalchemy.orm import relationship
 from datetime import datetime
 from database import Base
 
+class IncomeStream(Base):
+    """Pasif Gelir Akışları: Kira, Mevduat Faizi, vb."""
+    __tablename__ = "income_streams"
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), index=True)
+    name = Column(String)               # Örn: "Kadıköy Dairesi Kirası"
+    type = Column(String)               # 'rent' | 'deposit' | 'other'
+    amount = Column(Float)              # Aylık kira tutarı veya mevduat anapara
+    currency = Column(String, default="TRY")
+    interest_rate = Column(Float, nullable=True)    # Yıllık faiz oranı (mevduat için)
+    start_date = Column(String, nullable=True)      # Başlangıç tarihi
+    end_date = Column(String, nullable=True)        # Vade bitiş (mevduat)
+    asset_id = Column(String, nullable=True)        # Bağlı ticker (temettü için)
+    note = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=datetime.utcnow)
+
+
 class User(Base):
     __tablename__ = "users"
     id = Column(Integer, primary_key=True, index=True)

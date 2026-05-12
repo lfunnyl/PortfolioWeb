@@ -17,6 +17,7 @@ import { ProView }            from './components/ProView';
 import { SimulationView }     from './components/SimulationView';
 import { ComparisonView }     from './components/ComparisonView';
 import { ConnectorView }      from './components/ConnectorView';
+import IncomeView             from './components/IncomeView';
 import { GoalTracker }        from './components/GoalTracker';
 import { RealReturnSection }  from './components/RealReturnSection';
 import { TaxHarvestingSection } from './components/TaxHarvestingSection';
@@ -30,12 +31,12 @@ import { getAssetById }     from './services/priceService';
 import { AssetEntry, PortfolioRow, SaleEntry, DividendEntry, PortfolioSnapshot } from './types/asset';
 import './index.css';
 
-type Tab = 'portfolio' | 'sales' | 'dividends' | 'advanced' | 'pro' | 'comparison' | 'simulation' | 'news' | 'connectors';
+type Tab = 'portfolio' | 'sales' | 'dividends' | 'advanced' | 'pro' | 'comparison' | 'simulation' | 'news' | 'connectors' | 'income';
 type AppMode = 'simple' | 'pro';
 
 // Hangi sekmeler hangi modda görünür
-const SIMPLE_TABS: Tab[] = ['portfolio', 'sales', 'dividends', 'news'];
-const PRO_TABS:    Tab[] = ['portfolio', 'sales', 'dividends', 'advanced', 'pro', 'comparison', 'simulation', 'news', 'connectors'];
+const SIMPLE_TABS: Tab[] = ['portfolio', 'sales', 'dividends', 'income', 'news'];
+const PRO_TABS:    Tab[] = ['portfolio', 'sales', 'dividends', 'income', 'advanced', 'pro', 'comparison', 'simulation', 'news', 'connectors'];
 
 
 function App() {
@@ -208,6 +209,7 @@ function App() {
                 portfolio:  { label: 'Portföyüm',   icon: '📈', badge: <span className="tab-badge">{entries.length}</span> },
                 sales:      { label: 'Satışlar',     icon: '💰', badge: <span className="tab-badge">{sales.length}</span> },
                 dividends:  { label: 'Temettüler',   icon: '🏦', badge: totalDividendTRY > 0 ? <span className="tab-badge" style={{ background: '#10b981' }}>{dividends.length}</span> : undefined },
+                income:     { label: 'Gelir Akışı',  icon: '💰' },
                 advanced:   { label: 'Gelişmiş',     icon: '🔬' },
                 pro:        { label: 'Pro Analiz',   icon: '⭐' },
                 comparison: { label: 'Kıyaslama',    icon: '⚖️' },
@@ -450,6 +452,16 @@ function App() {
             </div>
             <NerInsightsSection rows={rows} />
             <NewsView />
+          </section>
+        )}
+
+        {activeTab === 'income' && (
+          <section className="table-section">
+            <div className="section-header">
+              <h2>💰 Pasif Gelir Akışları</h2>
+              <span className="entry-count" style={{ background: '#10b98122', color: '#10b981' }}>Kira · Faiz · Temettü</span>
+            </div>
+            <IncomeView entries={entries} usdRate={usdRate} />
           </section>
         )}
 
