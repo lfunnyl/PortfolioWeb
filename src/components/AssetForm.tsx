@@ -7,6 +7,7 @@ import { FormattedNumberInput } from './FormattedNumberInput';
 import { BrokerCombo } from './form/BrokerCombo';
 import { PartialDateInput } from './form/PartialDateInput';
 import { CustomAssetSearch } from './form/CustomAssetSearch';
+import { PortfolioGroupCombo } from './form/PortfolioGroupCombo';
 import { useAssetForm } from '../hooks/useAssetForm';
 
 interface AssetFormProps {
@@ -15,9 +16,10 @@ interface AssetFormProps {
   editEntry?: AssetEntry | null;
   onClose?: () => void;
   forceOpen?: boolean;
+  existingGroups?: string[];
 }
 
-export function AssetForm({ onEntryAdded, onEntryUpdated, editEntry, onClose, forceOpen }: AssetFormProps) {
+export function AssetForm({ onEntryAdded, onEntryUpdated, editEntry, onClose, forceOpen, existingGroups = [] }: AssetFormProps) {
   const {
     open, setOpen, state, set, defs, setDefs,
     confirmDeleteId, setConfirmDeleteId,
@@ -209,12 +211,11 @@ export function AssetForm({ onEntryAdded, onEntryUpdated, editEntry, onClose, fo
               </div>
               <div className="form-group" style={{ marginBottom:0 }}>
                 <label>Portföy Grubu <span className="optional-tag">opsiyonel</span></label>
-                <select value={state.portfolioGroup} onChange={e => set({ portfolioGroup: e.target.value })}>
-                  <option value="">Seçiniz...</option>
-                  {['Ana Portföy','Kripto','Hisse','Altın & Metal','Döviz','Emeklilik','Kısa Vade','Uzun Vade'].map(g => (
-                    <option key={g} value={g}>{g}</option>
-                  ))}
-                </select>
+                <PortfolioGroupCombo
+                  value={state.portfolioGroup || ''}
+                  onChange={v => set({ portfolioGroup: v })}
+                  extraGroups={existingGroups}
+                />
               </div>
             </div>
 

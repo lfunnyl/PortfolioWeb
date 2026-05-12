@@ -38,3 +38,7 @@ export const BROKER_LIST: { group: string; items: string[] }[] = [
     items: ['Interactive Brokers (IBKR)', 'eToro', 'Degiro', 'Revolut', 'Trading 212', 'Saxo Bank', 'Charles Schwab', 'Fidelity', 'Vanguard'],
   },
 ];
+// ─── Portföy Grupları ───────────────────────────────────────────
+export const PORTFOLIO_GROUPS = [
+  'Ana Portföy', 'Kripto', 'Hisse', 'Altın & Metal', 'Döviz', 'Emeklilik', 'Kısa Vade', 'Uzun Vade'
+];

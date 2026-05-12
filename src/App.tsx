@@ -72,6 +72,11 @@ function App() {
     [entries]
   );
 
+  const existingGroups = useMemo(
+    () => Array.from(new Set(entries.map(e => e.portfolioGroup).filter(Boolean))) as string[],
+    [entries]
+  );
+
   const { prices, isLoading, lastUpdated, error, refresh } = useLivePrices(activeAssetIds);
 
   const usdRate = prices['USD'] ?? 1;
@@ -283,6 +288,7 @@ function App() {
               onEntryUpdated={handleEntryUpdated}
               editEntry={editingEntry}
               onClose={() => setEditingEntry(null)}
+              existingGroups={existingGroups}
             />
             <section className="table-section">
               <div className="section-header">
