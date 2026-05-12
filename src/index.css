@@ -1320,3 +1320,24 @@ body {
 .rr-impact { color: #f97316; font-size: 0.85rem; }
 .rr-infl-list { display: flex; flex-wrap: wrap; gap: 0.4rem; margin-top: 0.3rem; }
 .gt-text-muted { color: var(--text-muted); }
+
+/* ─── Cloud Sync UI ──────────────────────────────────────────────── */
+@keyframes pulse-soft {
+  0%   { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.4); }
+  70%  { box-shadow: 0 0 0 4px rgba(59, 130, 246, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); }
+}
+
+.sync-menu-item {
+  transition: all 0.2s ease;
+}
+.sync-menu-item:hover:not(:disabled) {
+  background: var(--surface-hover) !important;
+}
+.sync-menu-item:disabled {
+  opacity: 0.5;
+}
+
+@media (min-width: 768px) {
+  .sync-label-md { display: inline !important; }
+}

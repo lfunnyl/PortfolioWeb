@@ -21,7 +21,10 @@ import { GoalTracker }        from './components/GoalTracker';
 import { RealReturnSection }  from './components/RealReturnSection';
 import { TaxHarvestingSection } from './components/TaxHarvestingSection';
 import { TechnicalSignalsSection } from './components/TechnicalSignalsSection';
+import { PriceForecastWidget }    from './components/PriceForecastWidget';
+import { NerInsightsSection }     from './components/NerInsightsSection';
 import { useLivePrices }    from './hooks/useLivePrices';
+import { useCloudSync }     from './hooks/useCloudSync';
 import { loadEntries, removeEntry, loadSales, loadDividends, removeDividend, loadSnapshots, saveSnapshot } from './utils/storage';
 import { getAssetById }     from './services/priceService';
 import { AssetEntry, PortfolioRow, SaleEntry, DividendEntry, PortfolioSnapshot } from './types/asset';
@@ -48,6 +51,20 @@ function App() {
   const { prices, isLoading, lastUpdated, error, refresh } = useLivePrices(activeAssetIds);
 
   const usdRate = prices['USD'] ?? 1;
+
+  // ── Cloud Sync ─────────────────────────────────────────────────────────────
+  const handleDataLoaded = useCallback(() => {
+    setEntries(loadEntries());
+    setSales(loadSales());
+    setDividends(loadDividends());
+  }, []);
+
+  const { syncStatus, lastSynced, syncError, manualPush, manualPull } = useCloudSync({
+    entries,
+    sales,
+    dividends,
+    onDataLoaded: handleDataLoaded,
+  });
 
   // ── Auth & Email Verifications (Routing Interceptor) ──
   useEffect(() => {
@@ -143,6 +160,11 @@ function App() {
         onRefresh={refresh}
         displayCurrency={displayCurrency}
         onToggleCurrency={() => setDisplayCurrency(p => p === 'TRY' ? 'USD' : 'TRY')}
+        syncStatus={syncStatus}
+        lastSynced={lastSynced}
+        syncError={syncError}
+        onManualPush={manualPush}
+        onManualPull={manualPull}
       />
       <main className="main-content">
         {error && <div className="error-banner">⚠️ {error}</div>}
@@ -282,6 +304,7 @@ function App() {
               usdRate={usdRate}
             />
             <TechnicalSignalsSection rows={rows} />
+            <PriceForecastWidget rows={rows} />
           </section>
         )}
 
@@ -321,6 +344,7 @@ function App() {
               <h2>Finansal Haberler</h2>
               <span className="entry-count">Kripto · BIST · ABD · Döviz</span>
             </div>
+            <NerInsightsSection rows={rows} />
             <NewsView />
           </section>
         )}

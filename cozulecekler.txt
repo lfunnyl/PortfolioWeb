@@ -139,7 +139,7 @@ Regülasyon (Regulatory): 🔴 Çok Negatif Kullanıcıya haberin neyinin iyi, n
  1. Tam Özellikli Veritabanı ve Senkronizasyon (Cloud Sync): Kayıp riski en yüksek alan. LocalStorage'dan çıkıp Firebase/PostgreSQL ile Auth + Veritabanı entegrasyonu kurulmalı. Aksi takdirde uygulanan diğer tüm gelişmiş algoritmalar verilerin silinmesiyle boşa gidecektir.
  2. BIST/Yurtdışı Fiyat Kusurları ve Opsiyon Verileri: Anlık API ağ gecikmelerine/limitlerine takılmamak adına; Sunucu (backend) yazılarak yfinance vb. ile verilerin (hisse, opsiyon) backend veritabanına cache'lenmesi/kaydedilmesi.
  3. Finansal Haberler Bölümü Limitleri: Marketaux API vb. sistemlerin limitasyonlarını çözmek için Webhook / AWS Lambda kurup saatlik önbellekleme (caching) yapısı kurulmalı.
- 4. Broker & On-Chain API Cüzdan Okuyucuları: Altyapı hazırlanırken manuel işlemlerden kurtulmak okuma (read-only) yetkili Cüzdan (Metamask, Solana, Binance) entegrasyonu.
+ BİTTİ  4. Broker & On-Chain API Cüzdan Okuyucuları: Altyapı hazırlanırken manuel işlemlerden kurtulmak okuma (read-only) yetkili Cüzdan (Metamask, Solana, Binance) entegrasyonu. [ConnectorView.tsx tüm sağlayıcılar + backend wallet_service.py HMAC/RPC imzalı]
 
 🟡 2. ORTA ÖNCELİKLİ (Çekirdek Finansal Analiz ve Kullanıcı Deneyimi)
 --------------------------------------------------------------------------------
@@ -155,11 +155,38 @@ Regülasyon (Regulatory): 🔴 Çok Negatif Kullanıcıya haberin neyinin iyi, n
  10. Portföy Korelasyon Matrisi ve Duygu Analizi (FinBERT): Heat-map korelasyon tabloları çıkartmak ve NLP ile hisselere/şirketlere duygu etiketleri asmak.
  11. Duygu - Fiyat Uyumsuzluğu (Sentiment Divergence Signal): Analiz edilen haberler (Negatif) ile Varlık Eğrisi'nin (Pozitif yükseliş) aynı anda ölçülerek uyumsuzluk uyarıları (Satış Sinyali) çıkartılması.
  12. Nedensel Çıkarım (Causal Inference): "Kazancın aslında döviz artışından dolayı oldu" gibi acı istatistikleri ve gerçek matematiksel etkenleri söyleyen Bayesian kurgular.
- 13. Makine Öğrenmesi Fiyat Öngörü (Prophet / CatBoost) & Monte Carlo Senaryoları.
- 14. Algoritmik Sinyaller (RSI / MACD) ve Varlık Çıkarımı (NER) ile dolaylı risk bildirimi.
+ BİTTİ  13. Makine Öğrenmesi Fiyat Öngörü (SES+Drift) & Monte Carlo Senaryoları. [PriceForecastWidget.tsx + /prices/forecast/{ticker} endpoint]
+ BİTTİ  14. Algoritmik Sinyaller (RSI / MACD) ve Varlık Çıkarımı (NER) ile dolaylı risk bildirimi. [TechnicalSignalsSection.tsx + NerInsightsSection.tsx + /news/ner endpoint]
  15. Kullanıcı Davranış Analizi (Behavioral ML Profiling): FOMO'da veya kaybetme korkusuyla mı trade işlemleri yapıyor, kullanıcının veri üzerinden psikolojik analizi.
  1. Sayısal (Kantitatif) Veri Bilimi ve İstatistik
 Burada fiyatları (zaman serilerini) alıp matematiği konuşturacağız:
 
 Portföy Korelasyon Matrisi (Heatmap): Varlıklar (hisseler/kriptolar) birbirleriyle ne kadar birlikte hareket ediyor? (Risk Ayrıştırma)
 Fiyat Öngörüleri & Monte Carlo Senaryoları: Klasik lineer büyüme yerine, varlığın volatilitesine (oynaklığına) göre 10.000 farklı rastgele senaryo oynatıp olasılık dağılımı (stokastik modelleme) çıkaracağız.
+
+================================================================================
+🌐 "SINGLE PANE OF GLASS" (TEK EKRAN) VİZYONU YOL HARİTASI
+================================================================================
+(İnsanların tüm varlıklarını en kolay şekilde tek bir yerden görebilmesi ilkesine dayalı stratejik adımlar.)
+
+🟦 1. KRİTİK ALTYAPI (Güven ve Erişim)
+--------------------------------------------------------------------------------
+ BİTTİ - Cloud Sync + Auth (Supabase/PostgreSQL): Veri kalıcılığı ve çok cihazlı erişim için temel şart. (Tam otomatik arka plan senkronizasyonu eklendi)
+ - Mobil PWA / Responsive Tasarım: Her yerden erişim için mobil uygulama deneyimi.
+ - Otomatik Fiyat Güncelleme (Push/WebSocket): Gerçek zamanlı portföy izleme.
+
+🟨 2. VARLIK GENİŞLİĞİ (Kapsamlı Takip)
+--------------------------------------------------------------------------------
+ - Banka Hesapları + TL Mevduat: Nakit ve mevduat faiz getirilerinin entegrasyonu.
+ - Gayrimenkul Takibi: Ev ve arsa değerlerinin manuel/endeks bazlı takibi.
+ - Emeklilik Fonları (BES/SGK): Uzun vadeli birikimlerin merkezi görünümü.
+ - Otomobil / Fiziksel Varlıklar: Araç değer takibi ve diğer değerli eşyalar.
+ - NFT & DeFi: On-chain varlıklar ve merkeziyetsiz finans pozisyonları.
+
+🟩 3. UX & KOLAY KULLANIM (Deneyim)
+--------------------------------------------------------------------------------
+ - Dashboard Ana Ekranı (Net Worth Widget): Tüm varlıkların toplamını tek büyük sayı olarak gösteren "Net Değer" ekranı.
+ - Hızlı Ekleme (Quick Add): Minimum form ile saniyeler içinde varlık girişi.
+ - Akıllı Bildirim Sistemi: Sert düşüşler, hedefe ulaşma veya temettü günleri için uyarılar.
+ - Broker CSV Import: Aracı kurumlardan (Garanti, Yapı Kredi vb.) toplu veri aktarımı.
+ - Erişilebilirlik: Karanlık mod ve çoklu dil desteği.

@@ -55,7 +55,15 @@ const PROVIDERS: Record<string, ProviderMeta> = {
     type: 'wallet',
     hint: 'Public Ethereum adresinizi girin (0x…).',
   },
+  solana: {
+    label: 'Solana Cüzdanı',
+    icon: '◎',
+    color: '#9945ff',
+    type: 'wallet',
+    hint: 'Solana public wallet adresinizi girin (Base58 formatı).',
+  },
 };
+
 
 // ──────────────────────────────────────────────────────────────────────────────
 // Component

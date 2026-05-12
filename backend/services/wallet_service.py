@@ -103,6 +103,36 @@ class WalletService:
         return []
 
     # ──────────────────────────────────────────────────────────────────────────
+    # Solana Cüzdanı (Mainnet RPC)
+    # ──────────────────────────────────────────────────────────────────────────
+    @staticmethod
+    def get_solana_balances(address: str) -> List[Dict[str, Any]]:
+        """
+        Solana mainnet RPC üzerinden SOL bakiyesini çeker.
+        Sadece public wallet address gerektirir.
+        """
+        if not address:
+            return []
+        try:
+            url = "https://api.mainnet-beta.solana.com"
+            payload = {
+                "jsonrpc": "2.0",
+                "id": 1,
+                "method": "getBalance",
+                "params": [address]
+            }
+            res = requests.post(url, json=payload, timeout=10)
+            if res.ok:
+                data = res.json()
+                lamports = data.get("result", {}).get("value", 0)
+                sol = lamports / 10**9
+                if sol > 0:
+                    return [{"asset": "SOL", "free": sol, "locked": 0}]
+        except Exception as e:
+            print(f"Solana fetch error: {e}")
+        return []
+
+    # ──────────────────────────────────────────────────────────────────────────
     # Yönlendirici — hangi provider → hangi metod
     # ──────────────────────────────────────────────────────────────────────────
     @staticmethod
@@ -117,4 +147,6 @@ class WalletService:
             )
         elif connector.provider in ["metamask", "ethereum", "etherscan"]:
             return WalletService.get_evm_balances(connector.wallet_address)
+        elif connector.provider == "solana":
+            return WalletService.get_solana_balances(connector.wallet_address)
         return []

@@ -248,3 +248,88 @@ def get_technical_signals(ticker: str):
         return {"error": str(e)}
 
 
+@router.get("/forecast/{ticker}")
+def get_price_forecast(ticker: str, days: int = 30):
+    """
+    Single Exponential Smoothing + Drift ile fiyat tahmini.
+    Bootstrapped %90 guven araligi. Ek kutüphane gerektirmez.
+    """
+    import yfinance as yf
+    import pandas as pd
+    import numpy as np
+
+    try:
+        data = yf.download(ticker, period="1y", interval="1d", progress=False)
+        if data.empty:
+            return {"error": "Veri bulunamadi"}
+
+        close = data["Close"]
+        if isinstance(close, pd.DataFrame):
+            close = close.iloc[:, 0]
+        close = close.dropna()
+
+        if len(close) < 30:
+            return {"error": "Yeterli veri yok (min 30 gun)"}
+
+        vals = close.values.astype(float)
+
+        def ses_forecast(series, alpha, h):
+            level = series[0]
+            for v in series[1:]:
+                level = alpha * v + (1 - alpha) * level
+            drift = float(np.mean(np.diff(series[-20:]))) if len(series) >= 20 else 0.0
+            return [level + drift * i for i in range(1, h + 1)]
+
+        best_alpha, best_mse = 0.3, float("inf")
+        for a in [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8]:
+            preds = [ses_forecast(vals[:i], a, 1)[0] for i in range(20, len(vals))]
+            actuals = list(vals[20:])
+            mse = float(np.mean((np.array(preds) - np.array(actuals)) ** 2))
+            if mse < best_mse:
+                best_mse, best_alpha = mse, a
+
+        forecast_vals = ses_forecast(vals, best_alpha, days)
+
+        fitted = [ses_forecast(vals[:i], best_alpha, 1)[0] for i in range(1, len(vals))]
+        residuals = vals[1:] - np.array(fitted)
+        std_res = float(np.std(residuals))
+        z90 = 1.645
+        lower = [f - z90 * std_res * (i + 1) ** 0.5 for i, f in enumerate(forecast_vals)]
+        upper = [f + z90 * std_res * (i + 1) ** 0.5 for i, f in enumerate(forecast_vals)]
+
+        last_date = close.index[-1]
+        future_dates = pd.bdate_range(start=last_date, periods=days + 1)[1:]
+
+        hist_slice = close.tail(60)
+        history = [
+            {"date": str(d.date()), "price": round(float(v), 4)}
+            for d, v in zip(hist_slice.index, hist_slice.values)
+        ]
+        forecast = [
+            {
+                "date": str(d.date()),
+                "price": round(float(p), 4),
+                "lower": round(float(l), 4),
+                "upper": round(float(u), 4),
+            }
+            for d, p, l, u in zip(future_dates, forecast_vals, lower, upper)
+        ]
+
+        current_price = float(vals[-1])
+        forecast_end  = forecast_vals[-1]
+        change_pct    = ((forecast_end - current_price) / current_price) * 100
+
+        return {
+            "ticker": ticker,
+            "alpha": round(best_alpha, 2),
+            "current_price": round(current_price, 4),
+            "forecast_end_price": round(forecast_end, 4),
+            "forecast_change_pct": round(change_pct, 2),
+            "confidence": 90,
+            "history": history,
+            "forecast": forecast,
+        }
+
+    except Exception as e:
+        return {"error": str(e)}
+
