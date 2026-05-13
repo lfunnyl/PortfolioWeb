@@ -11,6 +11,9 @@ Makine öğrenmesi algoritmaları, gerçek zamanlı fiyat akışları ve akıll�
 [![Backend](https://img.shields.io/badge/Backend-FastAPI-009688?style=for-the-badge&logo=fastapi)]()
 [![Frontend](https://img.shields.io/badge/Frontend-React%20%2B%20TypeScript-61DAFB?style=for-the-badge&logo=react)]()
 [![Status](https://img.shields.io/badge/Status-Beta%20%E2%80%94%20Aktif%20Geliştirme-orange?style=for-the-badge)]()
+[![Live Demo](https://img.shields.io/badge/🌐%20Canlı%20Demo-Vercel-black?style=for-the-badge&logo=vercel)](https://portfolio-web-sooty-kappa.vercel.app/)
+
+### 🌐 [portfolio-web-sooty-kappa.vercel.app](https://portfolio-web-sooty-kappa.vercel.app/)
 
 </div>
 
