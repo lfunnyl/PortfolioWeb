@@ -1,137 +1,207 @@
+<div align="center">
+
 # 📈 PortfolioWeb
 
-**PortfolioWeb**, yatırımlarınızı tek bir noktadan yönetmenizi, makine öğrenmesi ve veri bilimi algoritmalarıyla geleceğe dönük analizler yapmanızı sağlayan kapsamlı ve profesyonel bir portföy yönetim platformudur. Geleneksel varlıklardan kripto paralara, opsiyonlardan pasif gelir akışlarına kadar geniş bir yelpazede yatırım takibi sunar.
+### Tüm Yatırımlarınız. Tek Ekran. Yapay Zeka Destekli.
 
-> 🚧 **Not:** Bu proje şu anda aktif geliştirme aşamasındadır. Temel özellikler tamamlanmış olup, ileri düzey veri bilimi (Data Science) modülleri ve mobil entegrasyonlar üzerinde çalışmalar devam etmektedir.
+**Hisse, kripto, döviz, mevduat ve pasif gelirlerinizi tek bir uygulamada yönetin.**  
+Makine öğrenmesi algoritmaları, gerçek zamanlı fiyat akışları ve akıllı analizlerle portföyünüzün kontrolünü elinize alın.
 
----
+[![Platform](https://img.shields.io/badge/Platform-Web%20%7C%20iOS%20%7C%20Android-blueviolet?style=for-the-badge)]()
+[![Backend](https://img.shields.io/badge/Backend-FastAPI-009688?style=for-the-badge&logo=fastapi)]()
+[![Frontend](https://img.shields.io/badge/Frontend-React%20%2B%20TypeScript-61DAFB?style=for-the-badge&logo=react)]()
+[![Status](https://img.shields.io/badge/Status-Beta%20%E2%80%94%20Aktif%20Geliştirme-orange?style=for-the-badge)]()
 
-## ✨ Öne Çıkan Özellikler
-
-### 📊 Mevcut Özellikler (Aktif)
-- **Çoklu Varlık Takibi:** Hisse senetleri (BIST ve Global), kripto paralar, yatırım fonları ve döviz takibi.
-- **Bulut Senkronizasyonu (Cloud Sync):** JWT tabanlı kimlik doğrulama ile cihazlar arası kesintisiz veri aktarımı. Verileriniz güvende ve her an yanınızda.
-- **Pasif Gelir Modülü:** Kira gelirleri, banka mevduat faizleri, staking ve temettü ödemelerini otomatik takip eden sistem.
-- **Cüzdan ve Broker Entegrasyonu:** EVM uyumlu kripto cüzdanları (Metamask vs.) ve borsa entegrasyon altyapısı (Binance API).
-- **Gelişmiş Makine Öğrenmesi Tahminleri:** Zaman serisi analizi (Time Series Forecasting) ile hisse/kripto fiyatları için gelecek tahminleri ve güven aralıkları (Monte Carlo Simülasyonları).
-- **Algoritmik Sinyaller & Teknik Analiz:** RSI, MACD göstergeleri ile otomatik Al/Sat sinyalleri üretimi.
-- **Yapay Zeka Destekli Haber Analizi (NER):** Varlık Çıkarımı (Named Entity Recognition) ile haberlerin hisseler üzerindeki dolaylı etkilerini tespit eden akıllı sistem.
-- **Canlı Fiyat ve Haber Servisi:** Python tabanlı arka planda (yfinance üzerinden) çalışan, performans için önbelleklenmiş (cache) fiyat ve haber motoru.
-- **Güçlü Şifreleme:** API anahtarları gibi hassas veriler için AES-256 (Fernet) şifrelemesi.
-
-### 🚀 Gelecek Özellikler (Yol Haritası)
-- **Akıllı Vergi Hasadı (Tax-Loss Harvesting):** Yıl sonu vergi optimizasyonu için otomatik zarar realizasyonu önerileri.
-- **Enflasyondan Arındırılmış Reel Getiri:** TÜİK/ENAG verileri ile portföyün enflasyon karşısındaki gerçek durumunun hesaplanması.
-- **Portföy Korelasyon Matrisi:** Varlıkların birbirleriyle etkileşimini (Pearson Korelasyonu) gösteren risk ısı haritaları.
-- **Duygu Analizi (FinBERT):** Haber ve sosyal medya akışlarını analiz ederek hisse senedi üzerinde "Pozitif/Negatif" duygu skoru çıkartma.
-- **Nedensel Çıkarım (Causal Inference):** "Kazancınızın %80'i kur artışından kaynaklı" gibi derin matematiksel analizler.
-- **Davranışsal Analiz (Behavioral ML):** Yatırımcının FOMO ve panik satışı gibi psikolojik profilini analiz eden makine öğrenmesi modelleri.
-- **Mobil Uygulama (PWA & Capacitor):** iOS ve Android için tam uyumlu, bildirim destekli yerel (native) deneyim.
+</div>
 
 ---
 
-## 🛠️ Teknoloji Yığını (Tech Stack)
+## 🎯 Uygulama Hakkında
 
-**Frontend (Kullanıcı Arayüzü):**
-- React 18 & TypeScript
-- Vite (Hızlı build ve HMR)
-- Recharts (Gelişmiş finansal grafikler)
-- PWA (Progressive Web App) Desteği
+PortfolioWeb; Türkiye'deki yatırımcılar için tasarlanmış, **yapay zeka ve veri bilimi** destekli bir **kişisel fintech uygulamasıdır**. Amaç basit: tüm varlıklarınız (hisse, kripto, kira geliri, mevduat, cüzdanlar) tek bir yerden, canlı olarak takip edilsin; sistem sizi destekleyen akıllı analizler sunsun.
 
-**Backend (Sunucu & Veri Bilimi):**
+> ⚠️ **Yatırım tavsiyesi değildir.** Algoritmalar istatistiksel olasılıkları yansıtır, kesinlik bildirmez.
+
+---
+
+## 🌟 Ne Yapabilirsiniz?
+
+### 💼 Varlık Yönetimi
+| Özellik | Durum |
+|---|---|
+| BIST & Global Hisse Takibi | ✅ Aktif |
+| Kripto Para Portföyü | ✅ Aktif |
+| Döviz & Yatırım Fonu Takibi | ✅ Aktif |
+| Opsiyon İzleme (Pro) | ✅ Aktif |
+| Cüzdan & Broker Entegrasyonu (Binance, EVM) | ✅ Aktif |
+
+### 💸 Pasif Gelir Takibi
+| Özellik | Durum |
+|---|---|
+| Kira Geliri Kaydı | ✅ Aktif |
+| Mevduat Faizi Takibi | ✅ Aktif |
+| Otomatik Temettü & Staking | ✅ Aktif |
+| DRIP Bileşik Getiri Simülatörü | ✅ Aktif |
+
+### 🤖 Yapay Zeka & Analiz
+| Özellik | Durum |
+|---|---|
+| ML Fiyat Tahminleri (SES + Drift) | ✅ Aktif |
+| Monte Carlo Senaryoları (10.000 simülasyon) | ✅ Aktif |
+| RSI & MACD Algoritmik Sinyaller | ✅ Aktif |
+| Haber NER — Dolaylı Risk Bildirimi | ✅ Aktif |
+| Akıllı Vergi Hasadı (Tax-Loss Harvesting) | ✅ Aktif |
+| Enflasyondan Arındırılmış Reel Getiri | ✅ Aktif |
+| Hedef Takip & Progress Bar | ✅ Aktif |
+| Portföy Korelasyon Matrisi (Heatmap) | 🔜 Geliştiriliyor |
+| FinBERT Duygu Analizi | 🔜 Geliştiriliyor |
+| LLM Destekli Haber Özeti (Gemini / RAG) | 🔜 Geliştiriliyor |
+| Nedensel Çıkarım (Causal Inference) | 🔜 Geliştiriliyor |
+| Davranışsal Profil Analizi (Behavioral ML) | 🔜 Geliştiriliyor |
+
+### 📱 Platform & Altyapı
+| Özellik | Durum |
+|---|---|
+| Web Uygulaması (PWA) | ✅ Aktif |
+| Bulut Senkronizasyonu (Çok Cihazlı) | ✅ Aktif |
+| JWT Kimlik Doğrulama & Kayıt | ✅ Aktif |
+| AES-256 Şifrelemeli API Anahtar Saklama | ✅ Aktif |
+| Cloudflare Turnstile Anti-Spam | ✅ Aktif |
+| iOS Uygulaması (App Store) | 🔜 Planlanıyor |
+| Android Uygulaması (Google Play) | 🔜 Planlanıyor |
+
+---
+
+## 💡 Öne Çıkan Özellik: "Tek Ekran" Vizyonu
+
+> *İnsanların tüm varlıklarını en kolay şekilde tek bir yerden görebilmesi.*
+
+Çoğu yatırımcı; biri bankada, biri borsada, biri kriptoda, biri kirada olmak üzere parçalı bir tablo görür. PortfolioWeb, bu parçaları **tek bir net değer (Net Worth)** ekranında birleştirerek gerçek finansal durumunuzu anında görmenizi sağlar.
+
+---
+
+## 🏗️ Teknik Mimari
+
+```
+┌─────────────────────────────────────────────────────┐
+│                    KULLANICI                        │
+│         Web / PWA / iOS / Android                   │
+└──────────────────────┬──────────────────────────────┘
+                       │ HTTPS
+┌──────────────────────▼──────────────────────────────┐
+│              React 18 + TypeScript                  │
+│         (Vite, Recharts, PWA, Capacitor)            │
+└──────────────────────┬──────────────────────────────┘
+                       │ REST API
+┌──────────────────────▼──────────────────────────────┐
+│           FastAPI (Python 3.10+)                    │
+│   Auth │ Prices │ Portfolio │ ML │ News │ Wallets   │
+└───────┬──────────────────────────────┬──────────────┘
+        │                              │
+┌───────▼──────────┐        ┌──────────▼──────────────┐
+│  PostgreSQL DB   │        │  Dış Servisler           │
+│  (Production)    │        │  yfinance, Binance API   │
+│  SQLite (Dev)    │        │  Etherscan RPC, ML Models│
+└──────────────────┘        └─────────────────────────┘
+```
+
+---
+
+## 🔐 Güvenlik Mimarisi
+
+- **JWT** ile oturum yönetimi (Access + Refresh Token)
+- **Bcrypt** ile şifre hashleme
+- **AES-256 (Fernet)** ile API anahtarı şifreleme
+- **Cloudflare Turnstile** ile bot koruması
+- **CORS** kısıtlaması (sadece izin verilen domainler)
+- **Rate Limiting** (IP başına dakikada 60 istek)
+- Tüm hassas veri `.env` içinde, asla kaynak kodda değil
+
+---
+
+## 💰 Abonelik Planları *(Planlanıyor)*
+
+| Özellik | Ücretsiz | Premium |
+|---|:---:|:---:|
+| Varlık Sayısı | 10'a kadar | Sınırsız |
+| Bulut Senkronizasyonu | ✅ | ✅ |
+| Temel Fiyat Takibi | ✅ | ✅ |
+| ML Tahminleri & Sinyaller | ❌ | ✅ |
+| Cüzdan & Broker Entegrasyonu | ❌ | ✅ |
+| Pasif Gelir Modülü | ❌ | ✅ |
+| Vergi Hasadı Algoritması | ❌ | ✅ |
+| Aylık Fiyat | Ücretsiz | Yakında açıklanacak |
+
+---
+
+## 🛠️ Teknoloji Yığını
+
+| Katman | Teknoloji |
+|---|---|
+| Frontend | React 18, TypeScript, Vite, Recharts |
+| Mobil | Capacitor (iOS & Android) |
+| Backend | FastAPI, Python 3.10+ |
+| Veritabanı | PostgreSQL (prod) / SQLite (dev) |
+| ORM & Migration | SQLAlchemy, Alembic |
+| ML & Analiz | yfinance, Scikit-learn, Prophet |
+| Kimlik Doğrulama | JWT, Bcrypt, Fernet |
+| Deploy | Vercel (frontend) + Railway (backend) |
+| CI/CD | GitHub Actions |
+
+---
+
+## 🚀 Geliştirici Kurulumu
+
+<details>
+<summary><b>Yerel ortamda çalıştırmak için tıklayın</b></summary>
+
+### Gereksinimler
+- Node.js v18+
 - Python 3.10+
-- FastAPI (Yüksek performanslı asenkron API)
-- SQLAlchemy & Alembic (ORM ve Veritabanı Migrasyonları)
-- SQLite (Geliştirme) / PostgreSQL (Canlı Ortam)
-- yfinance & Özel API entegrasyonları
 
-**Güvenlik & Doğrulama:**
-- JWT (JSON Web Tokens)
-- Cloudflare Turnstile (Anti-bot koruması)
-- Bcrypt (Şifre hashleme) ve Fernet (Veri şifreleme)
-
----
-
-## 🏗️ Proje Yapısı
-
+### Backend
 ```bash
-PortfolioWeb/
-├── backend/                # FastAPI Sunucu ve Veri Bilimi Modülleri
-│   ├── main.py             # Uygulama giriş noktası
-│   ├── routers/            # API uç noktaları (auth, prices, portfolio vs.)
-│   ├── services/           # İş mantığı, ML modelleri ve veri çekme servisleri
-│   ├── models/             # Veritabanı tabloları (SQLAlchemy)
-│   └── requirements.txt    # Python bağımlılıkları
-├── src/                    # React Frontend Kaynak Kodları
-│   ├── components/         # Yeniden kullanılabilir UI bileşenleri
-│   ├── pages/              # Ana uygulama sayfaları (Dashboard, Ayarlar vb.)
-│   ├── services/           # Frontend API çağrıları
-│   ├── store/              # State yönetimi
-│   └── index.css           # Tasarım sistemi ve global stiller
-├── public/                 # Statik dosyalar (İkonlar, PWA manifest)
-├── ROADMAP.md              # Detaylı ürün yol haritası
-├── DEPLOYMENT.md           # Sunucu kurulum rehberi
-└── cozulecekler.txt        # Geliştirme notları ve çözülecek sorunlar
-```
-
----
-
-## 💻 Kurulum ve Çalıştırma (Yerel Geliştirme)
-
-Projeyi kendi bilgisayarınızda çalıştırmak için aşağıdaki adımları izleyin.
-
-### 1. Gereksinimler
-- Node.js (v18+)
-- Python (v3.10+)
-- Git
-
-### 2. Backend Kurulumu
-
-```bash
-# Backend klasörüne geçin
 cd backend
-
-# Python bağımlılıklarını yükleyin
 pip install -r requirements.txt
-
-# Çevre değişkenleri dosyasını oluşturun
-cp .env.example .env
-# Not: .env dosyasındaki SECRET_KEY ve diğer ayarları kendi ortamınıza göre güncelleyin.
-
-# Veritabanı tablolarını oluşturun (Migration)
-alembic upgrade head
-
-# FastAPI sunucusunu başlatın
-python run.py
-# Sunucu varsayılan olarak http://localhost:8000 adresinde çalışacaktır.
+cp .env.example .env        # .env içindeki SECRET_KEY'i güncelleyin
+alembic upgrade head        # Veritabanı tablolarını oluştur
+python run.py               # http://localhost:8000
 ```
 
-### 3. Frontend Kurulumu
-
-Yeni bir terminal açın ve proje ana dizininde şu komutları çalıştırın:
-
+### Frontend
 ```bash
-# Node paketlerini yükleyin
 npm install
-
-# Geliştirme sunucusunu başlatın
-npm run dev
-# Frontend varsayılan olarak http://localhost:5173 adresinde çalışacaktır.
+npm run dev                 # http://localhost:5173
 ```
 
----
+> Detaylı production deployment için → **[DEPLOYMENT.md](./DEPLOYMENT.md)**
 
-## 🌐 Canlı Ortam Kurulumu (Deployment)
-
-Projenin üretim (production) ortamına aktarılması için `DEPLOYMENT.md` dosyasında detaylı talimatlar bulunmaktadır. Özetle:
-
-- **Backend:** Railway veya Render üzerinden Docker veya doğrudan GitHub entegrasyonu ile (PostgreSQL kullanarak) yayınlanır.
-- **Frontend:** Vercel veya Netlify üzerine `npm run build` komutu ile deploy edilir. VITE_API_BASE çevre değişkeni backend URL'sine ayarlanmalıdır.
+</details>
 
 ---
 
-## 📜 Lisans ve Kullanım Şartları
+## 📊 Performans Hedefleri (Production KPI)
 
-Bu proje kişisel/ticari yatırım takibi vizyonu ile geliştirilmektedir. Bütün hakları saklıdır.
+| Metrik | Hedef |
+|---|---|
+| API Yanıt Süresi (P95) | < 200ms |
+| Uptime | %99.9 |
+| Eş Zamanlı Kullanıcı | 1.000+ |
+| Mobil Lighthouse Skoru | > 85 |
+| Güvenlik Açığı | 0 kritik |
 
-*Yatırım tavsiyesi değildir. Sistem içindeki öngörü algoritmaları istatistiksel olasılıkları yansıtır, kesinlik bildirmez.*
+---
+
+## 🗺️ Yol Haritası
+
+Ürünün tüm fazlarını ve önceliklendirmeyi görmek için → **[ROADMAP.md](./ROADMAP.md)**
+
+---
+
+<div align="center">
+
+**© 2026 PortfolioWeb — Tüm Hakları Saklıdır**
+
+*Bu uygulama yatırım tavsiyesi sunmaz. Geçmiş veriler gelecekteki performansı garanti etmez.*
+
+</div>
