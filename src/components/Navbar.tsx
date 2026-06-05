@@ -3,6 +3,8 @@ import { useAuth } from '../context/AuthContext';
 import { useState } from 'react';
 import { AuthModal } from './AuthModal';
 import { SyncStatus } from '../hooks/useCloudSync';
+import { useI18n } from '../context/I18nContext';
+import type { ThemeMode } from '../hooks/useTheme';
 
 interface NavbarProps {
   isLoading: boolean;
@@ -16,6 +18,9 @@ interface NavbarProps {
   syncError?: string | null;
   onManualPush?: () => void;
   onManualPull?: () => void;
+  // Theme & Lang
+  theme?: ThemeMode;
+  onToggleTheme?: () => void;
 }
 
 // Sync durumu görsel bilgileri
@@ -30,8 +35,10 @@ const SYNC_META: Record<SyncStatus, { icon: string; label: string; color: string
 export function Navbar({
   isLoading, lastUpdated, onRefresh, displayCurrency, onToggleCurrency,
   syncStatus = 'idle', lastSynced, syncError, onManualPush, onManualPull,
+  theme = 'dark', onToggleTheme,
 }: NavbarProps) {
   const { isAuthenticated, user, logout } = useAuth();
+  const { lang, setLang } = useI18n();
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [showSyncMenu, setShowSyncMenu] = useState(false);
 
@@ -200,6 +207,39 @@ export function Navbar({
           <button className="btn-currency-toggle" onClick={onToggleCurrency} title="Para Birimini Değiştir">
             {displayCurrency === 'TRY' ? '₺ TRY' : '$ USD'}
           </button>
+
+          {/* Dil Seçici */}
+          <button
+            id="lang-toggle-btn"
+            onClick={() => setLang(lang === 'tr' ? 'en' : 'tr')}
+            title={lang === 'tr' ? 'Switch to English' : "Türkçe'ye geç"}
+            style={{
+              padding: '0.3rem 0.6rem', borderRadius: '20px', cursor: 'pointer',
+              border: '1px solid var(--border)', background: 'var(--surface)',
+              color: 'var(--text-muted)', fontSize: '0.72rem', fontWeight: 700,
+              transition: 'all 0.2s', fontFamily: 'inherit',
+            }}
+          >
+            {lang === 'tr' ? '🇹🇷 TR' : '🇬🇧 EN'}
+          </button>
+
+          {/* Tema Toggle */}
+          {onToggleTheme && (
+            <button
+              id="theme-toggle-btn"
+              onClick={onToggleTheme}
+              title={theme === 'dark' ? 'Aydınlık Moda Geç' : 'Karanlık Moda Geç'}
+              style={{
+                width: '34px', height: '34px', borderRadius: '50%',
+                border: '1px solid var(--border)', background: 'var(--surface)',
+                color: 'var(--text-muted)', fontSize: '1rem', cursor: 'pointer',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                transition: 'all 0.2s',
+              }}
+            >
+              {theme === 'dark' ? '☀️' : '🌙'}
+            </button>
+          )}
 
           {/* Fiyat güncelleme zamanı + refresh */}
           {timeStr && (

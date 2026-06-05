@@ -185,8 +185,8 @@ Fiyat Öngörüleri & Monte Carlo Senaryoları: Klasik lineer büyüme yerine, v
 
 🟩 3. UX & KOLAY KULLANIM (Deneyim)
 --------------------------------------------------------------------------------
- - Dashboard Ana Ekranı (Net Worth Widget): Tüm varlıkların toplamını tek büyük sayı olarak gösteren "Net Değer" ekranı.
- - Hızlı Ekleme (Quick Add): Minimum form ile saniyeler içinde varlık girişi.
- - Akıllı Bildirim Sistemi: Sert düşüşler, hedefe ulaşma veya temettü günleri için uyarılar.
- - Broker CSV Import: Aracı kurumlardan (Garanti, Yapı Kredi vb.) toplu veri aktarımı.
- - Erişilebilirlik: Karanlık mod ve çoklu dil desteği.
+ - Dashboard Ana Ekranı (Net Worth Widget): Tüm varlıkların toplamını tek büyük sayı olarak gösteren "Net Değer" ekranı. (BİTTİ)
+ - Hızlı Ekleme (Quick Add): Minimum form ile saniyeler içinde varlık girişi. (BİTTİ)
+ BİTTİ - Akıllı Bildirim Sistemi: Sert düşüşler, hedefe ulaşma veya temettü günleri için uyarılar. [useNotifications hook + NotificationToast bileşeni]
+ BİTTİ - Broker CSV Import: Aracı kurumlardan (Garanti, Yapı Kredi vb.) toplu veri aktarımı. [BrokerCsvImport.tsx - 5 broker desteği]
+ BİTTİ - Erişilebilirlik: Karanlık mod ve çoklu dil desteği. [useTheme hook + I18nContext TR/EN]

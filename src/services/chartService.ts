@@ -1,6 +1,6 @@
 import { AssetDefinition } from '../types/asset';
 import { getAssetDefinitions } from './priceService';
-import { apiUrl } from '../utils/api';
+import { functionUrl } from '../utils/api';
 
 export interface ChartDataPoint {
   date: string;
@@ -26,7 +26,7 @@ const CG_DAYS: Record<TimeRange, string> = {
 async function fetchYahooChart(def: AssetDefinition, range: TimeRange): Promise<ChartDataPoint[]> {
   if (!def.stockKey) return [];
   
-  const url = apiUrl(`/prices/chart/${encodeURIComponent(def.stockKey)}?range=${range}`);
+  const url = `${functionUrl('priceChart')}?ticker=${encodeURIComponent(def.stockKey)}&range=${range}`;
   
   try {
     const res = await fetch(url, { signal: AbortSignal.timeout(6000) });
@@ -34,7 +34,7 @@ async function fetchYahooChart(def: AssetDefinition, range: TimeRange): Promise<
     const data = await res.json();
     return data; // already in format {date: string, price: number}[]
   } catch (err) {
-    console.warn("Backend chart fetch failed: ", err);
+    console.warn('Cloud Function chart fetch failed: ', err);
     return [];
   }
 }

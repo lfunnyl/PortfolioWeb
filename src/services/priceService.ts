@@ -1,5 +1,5 @@
 import { AssetDefinition } from '../types/asset';
-import { apiUrl } from '../utils/api';
+import { functionUrl } from '../utils/api';
 
 import { loadCustomAssets } from '../utils/storage';
 
@@ -158,13 +158,13 @@ export async function fetchAllPrices(assetIds: string[]): Promise<PriceMap> {
   if (!assetIds || assetIds.length === 0) return {};
   
   try {
-    const res = await fetch(apiUrl('/prices/bulk'), {
+    const res = await fetch(functionUrl('pricesBulk'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ asset_ids: assetIds })
     });
     
-    if (!res.ok) throw new Error('Backend fiyat servisine erisilemedi');
+    if (!res.ok) throw new Error('Cloud Function fiyat servisine erişilemedi');
     const data = await res.json();
     return data;
   } catch (err) {

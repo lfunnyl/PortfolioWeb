@@ -1,46 +1,97 @@
+/**
+ * AuthContext — Firebase Authentication ile kullanıcı oturumu yönetimi.
+ *
+ * Desteklenen işlemler:
+ *  - E-posta/şifre ile kayıt + otomatik doğrulama e-postası
+ *  - E-posta/şifre ile giriş
+ *  - Çıkış
+ *  - Şifre sıfırlama e-postası
+ *
+ * Firebase, JWT token yönetimini, bcrypt hash'lemeyi, şifre sıfırlamayı
+ * ve e-posta doğrulamayı otomatik üstlenir — backend kodu gerekmez.
+ */
 import React, { createContext, useContext, useState, useEffect } from 'react';
-
-interface User {
-  email: string;
-}
+import {
+  User as FirebaseUser,
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  sendEmailVerification,
+  sendPasswordResetEmail,
+  signOut,
+  onAuthStateChanged,
+} from 'firebase/auth';
+import { auth } from '../lib/firebase';
 
 interface AuthContextType {
-  user: User | null;
-  token: string | null;
-  login: (token: string, email: string) => void;
-  logout: () => void;
-  isAuthenticated: boolean;
+  user:             FirebaseUser | null;
+  isAuthenticated:  boolean;
+  isLoading:        boolean;
+  login:            (email: string, password: string) => Promise<void>;
+  register:         (email: string, password: string) => Promise<void>;
+  logout:           () => Promise<void>;
+  sendPasswordReset:(email: string) => Promise<void>;
+  /** Eski hook uyumu için — Firebase token'ı döner, kullanım önerilmez */
+  token:            string | null;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(null);
-  const [token, setToken] = useState<string | null>(localStorage.getItem('auth_token'));
+  const [user,      setUser]      = useState<FirebaseUser | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [token,     setToken]     = useState<string | null>(null);
 
+  // Firebase oturum durumu değişikliklerini dinle
   useEffect(() => {
-    const savedEmail = localStorage.getItem('auth_email');
-    if (token && savedEmail) {
-      setUser({ email: savedEmail });
-    }
-  }, [token]);
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      setUser(firebaseUser);
+      if (firebaseUser) {
+        // useCloudSync ile uyum için token'ı sakla (doğrudan Firestore kullandığı için artık gerekmiyor)
+        const t = await firebaseUser.getIdToken();
+        setToken(t);
+      } else {
+        setToken(null);
+      }
+      setIsLoading(false);
+    });
+    return unsubscribe;
+  }, []);
 
-  const login = (newToken: string, email: string) => {
-    localStorage.setItem('auth_token', newToken);
-    localStorage.setItem('auth_email', email);
-    setToken(newToken);
-    setUser({ email });
+  /** E-posta + şifre ile giriş */
+  const login = async (email: string, password: string) => {
+    await signInWithEmailAndPassword(auth, email, password);
   };
 
-  const logout = () => {
-    localStorage.removeItem('auth_token');
-    localStorage.removeItem('auth_email');
-    setToken(null);
-    setUser(null);
+  /** Yeni kullanıcı kaydı + doğrulama e-postası gönder */
+  const register = async (email: string, password: string) => {
+    const credential = await createUserWithEmailAndPassword(auth, email, password);
+    // Firebase doğrulama e-postasını otomatik gönder
+    await sendEmailVerification(credential.user);
+  };
+
+  /** Çıkış yap */
+  const logout = async () => {
+    await signOut(auth);
+  };
+
+  /** Şifre sıfırlama e-postası gönder */
+  const sendPasswordReset = async (email: string) => {
+    await sendPasswordResetEmail(auth, email);
   };
 
   return (
-    <AuthContext.Provider value={{ user, token, login, logout, isAuthenticated: !!token }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        isAuthenticated: !!user,
+        isLoading,
+        login,
+        register,
+        logout,
+        sendPasswordReset,
+        token,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );

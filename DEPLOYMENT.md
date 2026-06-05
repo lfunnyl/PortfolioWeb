@@ -1,88 +1,119 @@
-# Deployment Kılavuzu (Türkçe)
+# Firebase Deployment Kılavuzu
 # ===============================================
 
 ## Yerel Geliştirme
 
-### Backend Başlatma
+### Ön Koşullar
 ```bash
-cd backend
-pip install -r requirements.txt
+# Firebase CLI kurulu olmalı (bir kereye mahsus)
+npm install -g firebase-tools
 
-# .env dosyasını oluştur (bir kereye mahsus)
-cp .env.example .env
-# .env dosyasını düzenle ve SECRET_KEY'i değiştir!
-
-# Veritabanı migration'larını uygula
-alembic upgrade head
-
-# Sunucuyu başlat
-python run.py
+# Firebase hesabına giriş yap
+firebase login
 ```
 
-### Frontend Başlatma
+### 1. Firebase Projesi Oluştur (bir kereye mahsus)
+1. [console.firebase.google.com](https://console.firebase.google.com) → "Add project"
+2. **Authentication** → "Get started" → Email/Password provider'ı aktif et
+3. **Firestore** → "Create database" → "Start in production mode" → region: **europe-west1**
+4. **Project Settings** → "Your apps" → Web app ekle → Config bilgilerini kopyala
+
+### 2. .env Dosyasını Oluştur
 ```bash
+cp .env.example .env
+# .env dosyasını aç ve Firebase config bilgilerini doldur
+```
+
+### 3. Cloud Functions Bağımlılıklarını Kur
+```bash
+cd functions
 npm install
+```
+
+### 4. Frontend'i Başlat
+```bash
+# Proje kök dizininde
 npm run dev
+```
+
+### 5. (İsteğe Bağlı) Firebase Emulator ile Lokal Test
+```bash
+# functions klasöründe build
+cd functions && npm run build
+
+# Kök dizinde emulator başlat
+firebase emulators:start --only functions,firestore,auth
 ```
 
 ---
 
-## Production Deployment (Railway)
+## Production Deployment
 
-### 1. Railway'e Backend Deploy
-
-1. https://railway.app adresine git, GitHub ile giriş yap
-2. "New Project" → "Deploy from GitHub repo" → bu repo'yu seç
-3. Root klasör = `/backend`
-4. Environment Variables kısmına şunları ekle:
-
-```
-SECRET_KEY=<güçlü rastgele anahtar — python -c "import secrets; print(secrets.token_hex(32))">
-DATABASE_URL=<Railway sana PostgreSQL URL verecek>
-ENVIRONMENT=production
-ALLOWED_ORIGINS=https://siteadresin.com
+### 1. Firebase Projesini Yapılandır
+```bash
+# .firebaserc dosyasını güncelle
+firebase use YOUR_PROJECT_ID
 ```
 
-5. Railway otomatik PostgreSQL veritabanı eklemek için:
-   "Add Plugin" → "PostgreSQL" → `DATABASE_URL` otomatik eklenir
+### 2. Cloud Functions'ı Deploy Et
+```bash
+# Functions bağımlılıklarını kur ve derle
+cd functions
+npm install
+npm run build
+cd ..
 
-6. Start command: `uvicorn main:app --host 0.0.0.0 --port $PORT`
+# Sadece Functions deploy et
+firebase deploy --only functions
+```
 
-### 2. Vercel'e Frontend Deploy
+Functions deploy sonrası URL şu formatta olur:
+```
+https://europe-west1-YOUR_PROJECT_ID.cloudfunctions.net/pricesBulk
+```
 
-1. https://vercel.com → "Import Project" → GitHub repo'yu seç
-2. Root klasör = `/` (portfolioweb klasörü)
-3. Build command: `npm run build`
-4. Environment Variables:
-   ```
-   VITE_API_BASE=https://sening-railway-backend-url.railway.app
-   ```
+### 3. Firestore Kurallarını Deploy Et
+```bash
+firebase deploy --only firestore:rules
+```
 
-5. `vite.config.ts` içindeki proxy ayarını production URL'e yönlendir
+### 4. Frontend'i Build Et ve Deploy Et
+```bash
+# .env dosyasında VITE_FUNCTIONS_BASE'i ayarla:
+# VITE_FUNCTIONS_BASE=https://europe-west1-YOUR_PROJECT_ID.cloudfunctions.net
+
+npm run build
+firebase deploy --only hosting
+```
+
+### 5. Hepsini Aynı Anda Deploy Et
+```bash
+firebase deploy
+```
+
+---
+
+## Firestore Güvenlik Kuralları
+
+`firestore.rules` dosyasında tanımlı. Kullanıcılar sadece kendi `/users/{uid}/data/portfolio` dökümanlarına erişebilir.
+
+---
+
+## Cloud Functions Ortam Değişkenleri
+
+Gemini AI özeti için GEMINI_API_KEY gereklidir:
+```bash
+firebase functions:config:set gemini.api_key="YOUR_GEMINI_API_KEY"
+
+# Ya da Firebase Console → Functions → Secrets kullan
+```
 
 ---
 
 ## Versiyon Kontrol Kuralları
 
 - `.env` asla git'e gönderilmez!
+- `functions/lib/` (derleme çıktıları) git'e gönderilmez
 - `main` branch'e direkt push yasak
 - Her özellik için `feature/ozellik-adi` branch'i aç
 - PR açarak merge et
-
----
-
-## Veritabanı Migration Komutları
-
-```bash
-# Yeni migration oluştur (model değişikliklerinden sonra)
-alembic revision --autogenerate -m "Açıklama"
-
-# Güncel sürüme yükselt
-alembic upgrade head
-
-# Bir önceki sürüme geri al
-alembic downgrade -1
-
-# Tüm migration geçmişini gör
-alembic history
-```

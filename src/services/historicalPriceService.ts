@@ -29,14 +29,14 @@ async function fetchCryptoHistorical(def: AssetDefinition, date: Date): Promise<
   }
 }
 
-import { apiUrl } from '../utils/api';
+import { functionUrl } from '../utils/api';
 
 // 2. Hisse Senetleri (Yahoo Finance - Backend Üzerinden)
 async function fetchStockHistorical(def: AssetDefinition, date: Date): Promise<number | null> {
   if (!def.stockKey) return null;
   
   const dateStr = date.toISOString().split('T')[0];
-  const url = apiUrl(`/prices/historical/${encodeURIComponent(def.stockKey)}?date=${dateStr}`);
+  const url = `${functionUrl('priceHistorical')}?ticker=${encodeURIComponent(def.stockKey)}&date=${dateStr}`;
   
   try {
     const res = await fetch(url, { signal: AbortSignal.timeout(8000) });
@@ -44,7 +44,7 @@ async function fetchStockHistorical(def: AssetDefinition, date: Date): Promise<n
     const data = await res.json();
     return data?.price > 0 ? data.price : null;
   } catch (err) {
-    console.warn("Backend historical price fetch failed: ", err);
+    console.warn('Cloud Function historical price fetch failed: ', err);
     return null;
   }
 }

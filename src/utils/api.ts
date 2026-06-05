@@ -1,26 +1,34 @@
 /**
- * API URL yardımcısı — geliştirme ve production ortamlarında doğru URL'i üretir.
+ * API URL yardımcısı — Cloud Functions endpoint'lerine yönlendirir.
  *
- * Geliştirme: Vite proxy /api/backend → localhost:8000/api (proxy üzerinden)
- * Production: VITE_API_BASE env değişkeni Railway URL'ini içerir, direkt istek atılır
+ * Geliştirme: Firebase local emulator (http://localhost:5001/...)
+ * Production: Cloud Functions URL (https://europe-west1-PROJECT.cloudfunctions.net/...)
  */
 
-// Production'da Vercel env var'dan gelir, dev'de boş kalır (proxy kullanır)
-const API_BASE = (import.meta as any).env.VITE_API_BASE;
+const FUNCTIONS_BASE = (import.meta as any).env.VITE_FUNCTIONS_BASE as string | undefined;
+
+// Emulator base URL (firebase emulators:start çalışırken)
+const EMULATOR_BASE = 'http://localhost:5001';
 
 /**
- * Backend endpoint URL'i oluşturur.
- * @param path - "/auth/login" gibi /api sonrası yol
+ * Cloud Function URL'i oluşturur.
+ * @param functionName - Fonksiyon adı (örn: 'pricesBulk', 'newsGet')
  */
-export function apiUrl(path: string): string {
-  const normalizedPath = path.startsWith('/') ? path : `/${path}`;
-
-  if (API_BASE) {
-    // Production: direkt Railway'e git (örn: https://...railway.app/api/auth/login)
-    const baseUrl = API_BASE.startsWith('http') ? API_BASE : `https://${API_BASE}`;
-    return `${baseUrl}/api${normalizedPath}`;
+export function functionUrl(functionName: string): string {
+  if (FUNCTIONS_BASE) {
+    // Production: Cloud Functions URL
+    return `${FUNCTIONS_BASE}/${functionName}`;
   }
+  // Geliştirme: Firebase emulator
+  // Emulator URL formatı: http://localhost:5001/PROJECT_ID/REGION/FUNCTION_NAME
+  const projectId = (import.meta as any).env.VITE_FIREBASE_PROJECT_ID ?? 'demo-project';
+  return `${EMULATOR_BASE}/${projectId}/europe-west1/${functionName}`;
+}
 
-  // Geliştirme: Vite proxy üzerinden git
-  return `/api/backend${normalizedPath}`;
+/**
+ * @deprecated Railway backend kaldırıldı. Lütfen functionUrl() kullanın.
+ */
+export function apiUrl(_path: string): string {
+  console.warn('[apiUrl] Deprecated: Bu fonksiyon artık kullanılmamalıdır. functionUrl() kullanın.');
+  return '';
 }

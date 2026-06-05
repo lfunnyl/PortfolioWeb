@@ -1367,3 +1367,30 @@ body {
 @media (min-width: 768px) {
   .sync-label-md { display: inline !important; }
 }
+
+/* ─── Notification Toast ─────────────────────────────────────── */
+@keyframes notifSlideIn {
+  from { transform: translateX(120%); opacity: 0; }
+  to   { transform: translateX(0);    opacity: 1; }
+}
+
+/* ─── Theme Transition ───────────────────────────────────────── */
+*, *::before, *::after {
+  transition: background-color 0.25s ease, border-color 0.2s ease, color 0.15s ease;
+}
+/* Hızlı bileşenler için geçişi kapat (animasyon çakışması önleme) */
+.skeleton, .skeleton *, .spinning {
+  transition: none !important;
+}
+
+/* ─── Light Mode Extra Overrides ─────────────────────────────── */
+[data-theme="light"] .navbar {
+  background: rgba(240, 244, 255, 0.95);
+  border-bottom-color: rgba(0,0,0,0.08);
+}
+[data-theme="light"] .asset-table thead {
+  background: rgba(0,0,0,0.03);
+}
+[data-theme="light"] .glass-card {
+  box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+}

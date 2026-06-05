@@ -24,6 +24,10 @@ import { TaxHarvestingSection } from './components/TaxHarvestingSection';
 import { TechnicalSignalsSection } from './components/TechnicalSignalsSection';
 import { PriceForecastWidget }    from './components/PriceForecastWidget';
 import { NerInsightsSection }     from './components/NerInsightsSection';
+import { BrokerCsvImport }        from './components/BrokerCsvImport';
+import { NotificationToast, useToastState } from './components/NotificationToast';
+import { useNotifications }  from './hooks/useNotifications';
+import { useTheme }          from './hooks/useTheme';
 import { useLivePrices }    from './hooks/useLivePrices';
 import { useCloudSync }     from './hooks/useCloudSync';
 import { loadEntries, removeEntry, loadSales, loadDividends, removeDividend, loadSnapshots, saveSnapshot } from './utils/storage';
@@ -52,6 +56,10 @@ function App() {
   const [appMode, setAppMode] = useState<AppMode>(() => {
     return (localStorage.getItem('app_mode') as AppMode) ?? 'simple';
   });
+
+  // ── Theme & Notifications ─────────────────────────────────────────────────
+  const { theme, toggleTheme } = useTheme();
+  const { toasts, addNotifications, dismiss } = useToastState();
 
   const visibleTabs = appMode === 'simple' ? SIMPLE_TABS : PRO_TABS;
 
@@ -96,39 +104,10 @@ function App() {
     onDataLoaded: handleDataLoaded,
   });
 
-  // ── Auth & Email Verifications (Routing Interceptor) ──
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const token = params.get('token');
-    const pathname = window.location.pathname;
-
-    if (token) {
-      import('./utils/api').then(({ apiUrl }) => {
-        if (pathname === '/verify-email') {
-          fetch(apiUrl(`/auth/verify-email?token=${token}`))
-            .then(res => res.json())
-            .then(data => alert(data.message || data.detail || 'E-posta doğrulama tamamlandı.'))
-            .catch(() => alert('Sunucu ile iletişim kurulamadı.'))
-            .finally(() => window.history.replaceState({}, document.title, "/"));
-        } else if (pathname === '/reset-password') {
-          const newPassword = prompt("Lütfen yeni şifrenizi girin (en az 8 karakter):");
-          if (newPassword && newPassword.length >= 8) {
-            fetch(apiUrl('/auth/reset-password'), {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ token, new_password: newPassword })
-            }).then(res => res.json())
-              .then(data => alert(data.message || data.detail || 'Şifre güncellendi.'))
-              .catch(() => alert('Sunucu ile iletişim kurulamadı.'))
-              .finally(() => window.history.replaceState({}, document.title, "/"));
-          } else {
-            alert('Geçersiz şifre, işlem iptal edildi.');
-            window.history.replaceState({}, document.title, "/");
-          }
-        }
-      });
-    }
-  }, []);
+  // ── Firebase Auth e-posta doğrulama ve şifre sıfırlama ──────────────────
+  // Firebase bu işlemleri kendi Action URL'leri üzerinden yönetir.
+  // Firebase Console → Authentication → Templates → Action URL ayarlanarak
+  // özel domain'e yönlendirilebilir. Burada ek kod gerekmez.
 
   const rows: PortfolioRow[] = useMemo(() => {
     return entries
@@ -179,6 +158,13 @@ function App() {
   function handleDividendAdded(d: DividendEntry) { setDividends(prev => [...prev, d]); }
   function handleDividendRemoved(id: string) { removeDividend(id); setDividends(prev => prev.filter(d => d.id !== id)); }
   const handleEntriesChanged = useCallback(() => { setEntries(loadEntries()); }, []);
+  function handleCsvImported(newEntries: AssetEntry[]) {
+    setEntries(prev => [...prev, ...newEntries]);
+  }
+
+  // ── Bildirim sistemi ──────────────────────────────────────────────────────
+  const totalPortfolioTRY = useMemo(() => rows.reduce((s, r) => s + r.currentValueTRY, 0), [rows]);
+  useNotifications({ rows, dividends, totalPortfolioTRY, onNotifications: addNotifications });
 
   const totalDividendTRY = dividends.reduce((s, d) => s + d.amountTRY, 0);
 
@@ -195,6 +181,8 @@ function App() {
         syncError={syncError}
         onManualPush={manualPush}
         onManualPull={manualPull}
+        theme={theme}
+        onToggleTheme={toggleTheme}
       />
       <main className="main-content">
         {error && <div className="error-banner">⚠️ {error}</div>}
@@ -296,6 +284,7 @@ function App() {
               <div className="section-header">
                 <h2>Portföyüm</h2>
                 <span className="entry-count">{entries.length} varlık</span>
+                <BrokerCsvImport usdRate={usdRate} onImported={handleCsvImported} />
               </div>
               <AssetTable
                 rows={rows}
@@ -479,6 +468,9 @@ function App() {
       {sellingEntry && (
         <SaleForm entry={sellingEntry} onSaleAdded={handleSaleAdded} onClose={() => setSellingEntry(null)} currentPriceTRY={sellingPriceTRY} />
       )}
+
+      {/* ── Bildirim Toastları ── */}
+      <NotificationToast notifications={toasts} onDismiss={dismiss} />
     </div>
   );
 }

@@ -1,15 +1,24 @@
 /**
- * useCloudSync — Otomatik iki yönlü bulut senkronizasyonu
+ * useCloudSync — Firebase Firestore ile otomatik iki yönlü bulut senkronizasyonu.
+ *
+ * Veri yapısı (Firestore):
+ *   users/{uid}/portfolio (tek doküman — tüm portföy verisi)
+ *     → entries:   AssetEntry[]
+ *     → sales:     SaleEntry[]
+ *     → dividends: DividendEntry[]
+ *     → options:   OptionEntry[]
+ *     → updatedAt: string
  *
  * Çalışma prensibi:
- *  1. Kullanıcı giriş yaptığında → buluttan çek (pull), LocalStorage'a yaz, UI'ı yenile
- *  2. entries/sales/dividends değiştiğinde → 3 sn debounce sonra buluta kaydet (push)
+ *  1. Kullanıcı giriş yaptığında → Firestore'dan çek (pull), LocalStorage'a yaz, UI'ı yenile
+ *  2. entries/sales/dividends değiştiğinde → 3 sn debounce sonra Firestore'a kaydet (push)
  *  3. Kullanıcı çıkış yaptığında → sync durdur
  */
 
 import { useEffect, useRef, useCallback, useState } from 'react';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { db } from '../lib/firebase';
 import { useAuth } from '../context/AuthContext';
-import { apiUrl } from '../utils/api';
 import {
   loadEntries, loadSales, loadDividends, loadOptions,
   importData,
@@ -19,94 +28,92 @@ import { AssetEntry, SaleEntry, DividendEntry } from '../types/asset';
 export type SyncStatus = 'idle' | 'pulling' | 'pushing' | 'ok' | 'error';
 
 interface UseCloudSyncOptions {
-  entries: AssetEntry[];
-  sales: SaleEntry[];
+  entries:   AssetEntry[];
+  sales:     SaleEntry[];
   dividends: DividendEntry[];
-  onDataLoaded: () => void;   // LocalStorage güncellendikten sonra App state'ini tazele
+  onDataLoaded: () => void;
 }
 
 export function useCloudSync({ entries, sales, dividends, onDataLoaded }: UseCloudSyncOptions) {
-  const { token, isAuthenticated, logout } = useAuth();
+  const { user, isAuthenticated } = useAuth();
   const [syncStatus, setSyncStatus] = useState<SyncStatus>('idle');
   const [lastSynced, setLastSynced] = useState<Date | null>(null);
-  const [syncError, setSyncError] = useState<string | null>(null);
-  const pushTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const hasPulledRef = useRef(false);  // Aynı oturumda iki kez pull yapmayı önle
+  const [syncError,  setSyncError]  = useState<string | null>(null);
+  const pushTimer   = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const hasPulledRef = useRef(false);
 
-  // ── Buluttan Çek (Pull) ──────────────────────────────────────────────────
+  /** Firestore döküman referansı — uid bazlı */
+  const getPortfolioRef = useCallback(() => {
+    if (!user) return null;
+    return doc(db, 'users', user.uid, 'data', 'portfolio');
+  }, [user]);
+
+  // ── Firestore'dan Çek (Pull) ──────────────────────────────────────────────
   const pull = useCallback(async () => {
-    if (!token) return;
+    const ref = getPortfolioRef();
+    if (!ref) return;
+
     setSyncStatus('pulling');
     setSyncError(null);
     try {
-      const res = await fetch(apiUrl('/portfolio/sync'), {
-        headers: { Authorization: `Bearer ${token}` },
-        signal: AbortSignal.timeout(15000),
-      });
+      const snapshot = await getDoc(ref);
 
-      if (res.status === 401) { logout(); return; }
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      if (snapshot.exists()) {
+        const data = snapshot.data();
+        const hasCloudData =
+          (data.entries?.length   ?? 0) > 0 ||
+          (data.sales?.length     ?? 0) > 0 ||
+          (data.dividends?.length ?? 0) > 0;
 
-      const data = await res.json();
-
-      // Sadece bulutta veri varsa LocalStorage'ı güncelle
-      const hasCloudData = (data.entries?.length ?? 0) > 0
-        || (data.sales?.length ?? 0) > 0
-        || (data.dividends?.length ?? 0) > 0;
-
-      if (hasCloudData) {
-        importData(JSON.stringify({
-          entries: data.entries ?? [],
-          sales: data.sales ?? [],
-          dividends: data.dividends ?? [],
-          options: data.options ?? [],
-        }));
-        onDataLoaded();
+        if (hasCloudData) {
+          importData(JSON.stringify({
+            entries:   data.entries   ?? [],
+            sales:     data.sales     ?? [],
+            dividends: data.dividends ?? [],
+            options:   data.options   ?? [],
+          }));
+          onDataLoaded();
+        }
       }
 
       setSyncStatus('ok');
       setLastSynced(new Date());
     } catch (e: any) {
+      console.error('Firestore pull hatası:', e);
       setSyncStatus('error');
       setSyncError('Buluttan çekilemedi.');
     }
-  }, [token, logout, onDataLoaded]);
+  }, [getPortfolioRef, onDataLoaded]);
 
-  // ── Buluta Kaydet (Push) ─────────────────────────────────────────────────
+  // ── Firestore'a Kaydet (Push) ─────────────────────────────────────────────
   const push = useCallback(async () => {
-    if (!token || !isAuthenticated) return;
+    const ref = getPortfolioRef();
+    if (!ref || !isAuthenticated) return;
+
     setSyncStatus('pushing');
     setSyncError(null);
     try {
       const payload = {
-        entries: loadEntries(),
-        sales: loadSales(),
+        entries:   loadEntries(),
+        sales:     loadSales(),
         dividends: loadDividends(),
-        options: loadOptions(),
+        options:   loadOptions(),
+        updatedAt: new Date().toISOString(),
       };
 
-      const res = await fetch(apiUrl('/portfolio/sync'), {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(payload),
-        signal: AbortSignal.timeout(15000),
-      });
-
-      if (res.status === 401) { logout(); return; }
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      // merge: true → belgenin diğer alanlarını silmez
+      await setDoc(ref, payload, { merge: true });
 
       setSyncStatus('ok');
       setLastSynced(new Date());
     } catch (e: any) {
+      console.error('Firestore push hatası:', e);
       setSyncStatus('error');
       setSyncError('Buluta kaydedilemedi.');
     }
-  }, [token, isAuthenticated, logout]);
+  }, [getPortfolioRef, isAuthenticated]);
 
-  // ── Giriş yapılınca bir kez Pull ────────────────────────────────────────
+  // ── Giriş yapılınca bir kez Pull ──────────────────────────────────────────
   useEffect(() => {
     if (isAuthenticated && !hasPulledRef.current) {
       hasPulledRef.current = true;
@@ -119,9 +126,9 @@ export function useCloudSync({ entries, sales, dividends, onDataLoaded }: UseClo
     }
   }, [isAuthenticated, pull]);
 
-  // ── Veri değişince debounced Push (3 sn) ────────────────────────────────
+  // ── Veri değişince debounced Push (3 sn) ─────────────────────────────────
   useEffect(() => {
-    if (!isAuthenticated || !hasPulledRef.current) return;  // pull bitmeden push etme
+    if (!isAuthenticated || !hasPulledRef.current) return;
 
     if (pushTimer.current) clearTimeout(pushTimer.current);
     pushTimer.current = setTimeout(() => {
@@ -134,7 +141,6 @@ export function useCloudSync({ entries, sales, dividends, onDataLoaded }: UseClo
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [entries, sales, dividends, isAuthenticated]);
 
-  // Manuel tetikleyiciler
   const manualPush = useCallback(() => {
     if (pushTimer.current) clearTimeout(pushTimer.current);
     push();
