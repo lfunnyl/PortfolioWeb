@@ -1,8 +1,5 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { apiUrl } from '../utils/api';
-import { importData } from '../utils/storage';
-import { Turnstile } from '@marsidev/react-turnstile';
 
 type AuthView = 'login' | 'register' | 'verify_sent' | 'forgot' | 'forgot_sent';
 
@@ -10,10 +7,7 @@ interface AuthModalProps {
   onClose: () => void;
 }
 
-const TURNSTILE_SITE_KEY = (import.meta as any).env.VITE_TURNSTILE_SITE_KEY || '';
-
 const Modal = ({ children, onClose }: { children: React.ReactNode; onClose: () => void }) => (
-// ... existing Modal component ...
   <div className="modal-overlay" onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
     <div style={{
       background: 'linear-gradient(145deg, #0d1525, #0a1020)',
@@ -35,7 +29,6 @@ const Input = ({ label, type = 'text', value, onChange, placeholder, extra }: {
   label: string; type?: string; value: string;
   onChange: (v: string) => void; placeholder?: string; extra?: React.ReactNode;
 }) => (
-// ... existing Input component ...
   <div style={{ display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
     <label style={{ fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: '#5a6885' }}>
       {label}
@@ -59,6 +52,7 @@ const Input = ({ label, type = 'text', value, onChange, placeholder, extra }: {
           outline: 'none',
           transition: 'all 0.18s',
           paddingRight: extra ? '44px' : undefined,
+          boxSizing: 'border-box',
         }}
         onFocus={e => {
           e.target.style.borderColor = 'rgba(79,142,247,0.6)';
@@ -74,116 +68,85 @@ const Input = ({ label, type = 'text', value, onChange, placeholder, extra }: {
   </div>
 );
 
+// Firebase hata kodlarını Türkçeye çevir
+function firebaseErrorToTurkish(code: string): string {
+  const map: Record<string, string> = {
+    'auth/email-already-in-use': 'Bu e-posta adresi zaten kayıtlı.',
+    'auth/invalid-email': 'Geçersiz e-posta adresi.',
+    'auth/weak-password': 'Şifre çok zayıf. En az 6 karakter olmalı.',
+    'auth/user-not-found': 'Bu e-posta ile kayıtlı kullanıcı bulunamadı.',
+    'auth/wrong-password': 'Hatalı şifre. Lütfen tekrar deneyin.',
+    'auth/invalid-credential': 'Hatalı e-posta veya şifre.',
+    'auth/too-many-requests': 'Çok fazla başarısız deneme. Lütfen bir süre bekleyin.',
+    'auth/network-request-failed': 'İnternet bağlantınızı kontrol edin.',
+    'auth/user-disabled': 'Bu hesap devre dışı bırakılmış.',
+  };
+  return map[code] || 'Bir hata oluştu. Lütfen tekrar deneyin.';
+}
+
 export function AuthModal({ onClose }: AuthModalProps) {
-  const { login } = useAuth();
+  const { login, register, sendPasswordReset } = useAuth();
   const [view, setView] = useState<AuthView>('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [passwordConfirm, setPasswordConfirm] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [turnstileToken, setTurnstileToken] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
+  // ── GİRİŞ YAP ────────────────────────────────────────────────────────────
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true); setError('');
     try {
-      const fd = new FormData();
-      fd.append('username', email);
-      fd.append('password', password);
-      const res = await fetch(apiUrl('/auth/login'), { method: 'POST', body: fd });
-      if (res.ok) {
-        const data = await res.json();
-        login(data.access_token, email);
-        try {
-          const syncRes = await fetch(apiUrl('/portfolio/sync'), {
-            headers: { 'Authorization': `Bearer ${data.access_token}` },
-          });
-          if (syncRes.ok) {
-            const syncData = await syncRes.json();
-            importData(JSON.stringify({
-              entries: syncData.entries || [],
-              sales: syncData.sales || [],
-              dividends: syncData.dividends || [],
-              options: syncData.options || [],
-            }));
-          }
-        } catch {}
-        onClose();
-        window.location.reload();
-      } else {
-        const err = await res.json();
-        setError(res.status === 403 ? 'E-posta adresiniz doğrulanmadı. Lütfen gelen kutunuzu (veya Spam klasörünü) kontrol edin.' : (err.detail || 'Hatalı e-posta veya şifre'));
-      }
-    } catch { setError('Sunucu bağlantı hatası.'); }
-    finally { setLoading(false); }
+      await login(email, password);
+      onClose();
+    } catch (err: any) {
+      setError(firebaseErrorToTurkish(err.code));
+    } finally {
+      setLoading(false);
+    }
   }
 
+  // ── KAYIT OL ─────────────────────────────────────────────────────────────
   async function handleRegister(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true); setError('');
-    if (password.length < 8) { setError('Şifre en az 8 karakter olmalıdır.'); setLoading(false); return; }
-    if (password !== passwordConfirm) { setError('Şifreler eşleşmiyor.'); setLoading(false); return; }
-    if (TURNSTILE_SITE_KEY && !turnstileToken) { setError('Lütfen robot olmadığınızı doğrulayın.'); setLoading(false); return; }
+
+    if (password.length < 6) {
+      setError('Şifre en az 6 karakter olmalıdır.');
+      setLoading(false); return;
+    }
+    if (password !== passwordConfirm) {
+      setError('Şifreler eşleşmiyor.');
+      setLoading(false); return;
+    }
 
     try {
-      const res = await fetch(apiUrl('/auth/register'), {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password, turnstileToken: turnstileToken }),
-      });
-      if (res.ok) {
-        // Eğer e-posta doğrulaması açık değilse, otomatik giriş yapılabilir.
-        // E-posta doğrulaması açıksa, login başarılı olmayacaktır. Biz yine de deneyelim.
-        const fd = new FormData();
-        fd.append('username', email);
-        fd.append('password', password);
-        const loginRes = await fetch(apiUrl('/auth/login'), { method: 'POST', body: fd });
-        if (loginRes.ok) {
-          const data = await loginRes.json();
-          login(data.access_token, email);
-          onClose();
-          window.location.reload();
-        } else {
-          // Eğer 403 aldıysak, demek ki e-posta onayı aktif!
-          if (loginRes.status === 403) {
-             setView('verify_sent');
-          } else {
-             setView('login');
-             setError('Kayıt başarılı ancak otomatik giriş yapılamadı. Lütfen giriş yapın.');
-          }
-        }
-      }
-      else { const err = await res.json(); setError(err.detail || 'Kayıt yapılamadı.'); }
-    } catch { setError('Sunucu bağlantı hatası.'); }
-    finally { setLoading(false); }
+      await register(email, password);
+      setView('verify_sent');
+    } catch (err: any) {
+      setError(firebaseErrorToTurkish(err.code));
+    } finally {
+      setLoading(false);
+    }
   }
 
+  // ── ŞİFREMİ UNUTTUM ──────────────────────────────────────────────────────
   async function handleForgot(e: React.FormEvent) {
     e.preventDefault();
     setLoading(true); setError('');
     try {
-      await fetch(apiUrl('/auth/forgot-password'), {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email }),
-      });
+      await sendPasswordReset(email);
       setView('forgot_sent');
-    } catch { setError('Sunucu bağlantı hatası.'); }
-    finally { setLoading(false); }
+    } catch (err: any) {
+      setError(firebaseErrorToTurkish(err.code));
+    } finally {
+      setLoading(false);
+    }
   }
 
-  async function handleResendVerification() {
-    setLoading(true);
-    try {
-      await fetch(apiUrl('/auth/resend-verification'), {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email }),
-      });
-      alert('Doğrulama e-postası tekrar gönderildi!');
-    } finally { setLoading(false); }
-  }
-
+  // ── BUTONLAR ─────────────────────────────────────────────────────────────
   const SubmitBtn = ({ children }: { children: React.ReactNode }) => (
     <button
       type="submit"
@@ -198,8 +161,6 @@ export function AuthModal({ onClose }: AuthModalProps) {
         transition: 'all 0.18s', letterSpacing: '0.02em',
         marginTop: '0.5rem',
       }}
-      onMouseEnter={e => { if (!loading) { (e.target as HTMLButtonElement).style.transform = 'translateY(-2px)'; (e.target as HTMLButtonElement).style.boxShadow = '0 8px 28px rgba(79,142,247,0.45)'; }}}
-      onMouseLeave={e => { (e.target as HTMLButtonElement).style.transform = ''; (e.target as HTMLButtonElement).style.boxShadow = loading ? 'none' : '0 4px 20px rgba(79,142,247,0.35)'; }}
     >
       {loading ? '⏳ İşlem yapılıyor...' : children}
     </button>
@@ -226,10 +187,7 @@ export function AuthModal({ onClose }: AuthModalProps) {
       width: '28px', height: '28px', fontSize: '0.9rem',
       display: 'flex', alignItems: 'center', justifyContent: 'center',
       transition: 'all 0.15s',
-    }}
-      onMouseEnter={e => { (e.target as HTMLButtonElement).style.background = 'rgba(255,255,255,0.1)'; (e.target as HTMLButtonElement).style.color = '#eef2ff'; }}
-      onMouseLeave={e => { (e.target as HTMLButtonElement).style.background = 'rgba(255,255,255,0.06)'; (e.target as HTMLButtonElement).style.color = '#5a6885'; }}
-    >✕</button>
+    }}>✕</button>
   );
 
   const Logo = () => (
@@ -241,30 +199,28 @@ export function AuthModal({ onClose }: AuthModalProps) {
     </div>
   );
 
+  // ── E-POSTA DOĞRULAMA / ŞİFRE SIFIRLA GÖNDER EKRANI ─────────────────────
   if (view === 'verify_sent' || view === 'forgot_sent') {
     return (
       <Modal onClose={onClose}>
         <CloseBtn />
         <Logo />
         <div style={{ textAlign: 'center', padding: '0.5rem 0 1rem' }}>
-          <div style={{ fontSize: '3rem', marginBottom: '1rem', filter: 'drop-shadow(0 4px 12px rgba(0,0,0,0.5))' }}>
+          <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>
             {view === 'verify_sent' ? '📬' : '🔑'}
           </div>
-          <h3 style={{ fontWeight: 700, marginBottom: '0.75rem', fontSize: '1.1rem' }}>
+          <h3 style={{ fontWeight: 700, marginBottom: '0.75rem', fontSize: '1.1rem', color: '#eef2ff' }}>
             {view === 'verify_sent' ? 'E-postanızı Kontrol Edin' : 'Link Gönderildi'}
           </h3>
           <p style={{ color: '#5a6885', lineHeight: 1.7, fontSize: '0.88rem', marginBottom: '1.5rem' }}>
             {view === 'verify_sent'
-              ? <><strong style={{ color: '#8899b8' }}>{email}</strong> adresine doğrulama linki gönderdik.</>
+              ? <><strong style={{ color: '#8899b8' }}>{email}</strong> adresine doğrulama linki gönderdik. Doğruladıktan sonra giriş yapabilirsiniz.</>
               : <>Eğer <strong style={{ color: '#8899b8' }}>{email}</strong> kayıtlıysa, şifre sıfırlama linki gönderildi.</>
             }
           </p>
-          {view === 'verify_sent' && (
-            <TextBtn onClick={handleResendVerification}>↩ Tekrar gönder</TextBtn>
-          )}
         </div>
         <button
-          onClick={() => setView('login')}
+          onClick={() => { setView('login'); setError(''); }}
           style={{
             width: '100%', padding: '0.75rem', background: 'rgba(255,255,255,0.05)',
             border: '1px solid rgba(255,255,255,0.09)', borderRadius: '13px',
@@ -275,29 +231,31 @@ export function AuthModal({ onClose }: AuthModalProps) {
     );
   }
 
+  // ── ŞİFREMİ UNUTTUM EKRANI ───────────────────────────────────────────────
   if (view === 'forgot') {
     return (
       <Modal onClose={onClose}>
         <CloseBtn />
         <Logo />
-        <h3 style={{ fontWeight: 700, marginBottom: '1.25rem', fontSize: '1.15rem' }}>Şifremi Unuttum</h3>
+        <h3 style={{ fontWeight: 700, marginBottom: '1.25rem', fontSize: '1.15rem', color: '#eef2ff' }}>Şifremi Unuttum</h3>
         <form onSubmit={handleForgot} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
           <Input label="Kayıtlı E-posta" type="email" value={email} onChange={setEmail} placeholder="email@adresiniz.com" />
-          {error && <p style={{ color: '#f5495a', fontSize: '0.83rem', margin: 0 }}>⚠ {error}</p>}
+          {error && <div style={{ background: 'rgba(245,73,90,0.1)', border: '1px solid rgba(245,73,90,0.25)', borderRadius: '10px', padding: '0.6rem 0.85rem', color: '#fda4af', fontSize: '0.83rem' }}>⚠ {error}</div>}
           <SubmitBtn>📩 Sıfırlama Linki Gönder</SubmitBtn>
-          <TextBtn onClick={() => setView('login')}>← Giriş sayfasına dön</TextBtn>
+          <TextBtn onClick={() => { setView('login'); setError(''); }}>← Giriş sayfasına dön</TextBtn>
         </form>
       </Modal>
     );
   }
 
+  // ── GİRİŞ / KAYIT EKRANI ─────────────────────────────────────────────────
   const isLogin = view === 'login';
   return (
     <Modal onClose={onClose}>
       <CloseBtn />
       <Logo />
 
-      {/* Tab switcher */}
+      {/* Tab */}
       <div style={{ display: 'flex', background: 'rgba(255,255,255,0.04)', borderRadius: '12px', padding: '3px', marginBottom: '1.5rem' }}>
         {(['login', 'register'] as const).map(v => (
           <button key={v} type="button" onClick={() => { setView(v); setError(''); }}
@@ -315,9 +273,8 @@ export function AuthModal({ onClose }: AuthModalProps) {
 
       <form onSubmit={isLogin ? handleLogin : handleRegister} style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
         <Input label="E-posta" type="email" value={email} onChange={setEmail} placeholder="email@adresiniz.com" />
-
         <Input
-          label={`Şifre${!isLogin ? ' (en az 8 karakter)' : ''}`}
+          label={`Şifre${!isLogin ? ' (en az 6 karakter)' : ''}`}
           type={showPassword ? 'text' : 'password'}
           value={password}
           onChange={setPassword}
@@ -329,19 +286,8 @@ export function AuthModal({ onClose }: AuthModalProps) {
             </button>
           }
         />
-
         {!isLogin && (
           <Input label="Şifre Tekrar" type={showPassword ? 'text' : 'password'} value={passwordConfirm} onChange={setPasswordConfirm} placeholder="••••••••" />
-        )}
-
-        {!isLogin && TURNSTILE_SITE_KEY && (
-          <div style={{ marginTop: '0.5rem', display: 'flex', justifyContent: 'center' }}>
-            <Turnstile
-              siteKey={TURNSTILE_SITE_KEY}
-              onSuccess={(token) => { setTurnstileToken(token); setError(''); }}
-              onError={() => setError('Güvenlik doğrulaması yüklenemedi.')}
-            />
-          </div>
         )}
 
         {error && (
@@ -354,7 +300,7 @@ export function AuthModal({ onClose }: AuthModalProps) {
 
         {isLogin && (
           <div style={{ textAlign: 'right' }}>
-            <TextBtn onClick={() => setView('forgot')}>Şifremi unuttum</TextBtn>
+            <TextBtn onClick={() => { setView('forgot'); setError(''); }}>Şifremi unuttum</TextBtn>
           </div>
         )}
       </form>
